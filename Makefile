@@ -12,7 +12,7 @@ clean  :; forge clean
 # Remove modules
 remove :; rm -rf .gitmodules && rm -rf .git/modules/* && rm -rf lib && touch .gitmodules && git add . && git commit -m "modules"
 
-install :; forge install cyfrin/foundry-devops@0.4.0 && forge install foundry-rs/forge-std@v1.11.0 && forge install openzeppelin/openzeppelin-contracts@v5.4.0
+install :; forge install cyfrin/foundry-devops@0.4.0 && forge install foundry-rs/forge-std@v1.11.0 && forge install openzeppelin/openzeppelin-contracts@v5.4.0 && forge install smartcontractkit/chainlink-brownie-contracts@1.3.0
 
 # Update Dependencies
 update:; forge update
@@ -36,8 +36,8 @@ ifeq ($(findstring --network sepolia,$(ARGS)),--network sepolia)
 	NETWORK_ARGS := --rpc-url $(SEPOLIA_RPC_URL) --account defaultKey --broadcast --verify --etherscan-api-key $(ETHERSCAN_API_KEY) -vvvv
 endif
 
-# deployDynamic:
-# 	@forge script script/DeployDynamicNft.s.sol:DeployDynamicNft $(NETWORK_ARGS)
+deployDSC:
+	@forge script script/DeployDSC.s.sol:DeployDSC $(NETWORK_ARGS)
 
 # mintDynamicNft:
 # 	@forge script script/Interactions.s.sol:MintDynamicNft $(NETWORK_ARGS)

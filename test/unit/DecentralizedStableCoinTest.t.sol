@@ -8,13 +8,9 @@ import {DecentralizedStableCoin, Ownable} from "../../src/DecentralizedStableCoi
 
 contract DecentralizedStableCoinTest is Test {
     DecentralizedStableCoin public dsc;
-    // DeployDSC public deployer;
-    // HelperConfig public helperConfig
-
     address user1 = makeAddr("user1");
     address user2 = makeAddr("user2");
     address public owner;
-
     uint256 public startingUserBalance = 10 ether;
 
     function setUp() external {

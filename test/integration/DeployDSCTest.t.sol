@@ -7,17 +7,40 @@ import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 
 contract DecentralizedStableCoinTest is Test {
-    DecentralizedStableCoin public dsc;
     DeployDSC public deployer;
     HelperConfig public helperConfig;
+    DecentralizedStableCoin public dsc;
     HelperConfig.NetworkConfig public config;
-
-    // address user = madeAddr("user");
-    // address user2 = makeAddr("user2");
 
     function setUp() external {
         deployer = new DeployDSC();
         (dsc, helperConfig) = deployer.run();
         config = helperConfig.getConfig();
     }
+
+    /*//////////////////////////////////////////////////////////////
+                           INITIAL DSC STATE
+    //////////////////////////////////////////////////////////////*/
+
+    function testDscNameWasSetCorrectly() external {
+        assertEq(dsc.name(), );
+    }
+
+    function testDscSymbolWasSetCorrectly() external {
+        assertEq(dsc.symbol(), );
+    }
+
+    function testDscOwnerWasSetCorrectly() external {}
+
+    /*//////////////////////////////////////////////////////////////
+                       INITIAL DSC ENGINE STATE
+    //////////////////////////////////////////////////////////////*/
+
+    function testDscEngineWethUsdPriceFeedWasSetCorrectly() external {}
+
+    function testDscEngineWbtcUsdPriceFeedWasSetCorrectly() external {}
+
+    function testDscEngineWethAddressWasSetCorrectly() external {}
+
+    function testDscEngineWbtcAddressWasSetCorrectly() external {}
 }

@@ -13,10 +13,10 @@ import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
  *
  * The System is designed to be as minimal as possible while maintaining a
  * 1 token == 1$ peg.
- * This DSC stablecoin has the following properties:
- * - Exogenous collateral
- * - Dollar pegged
- * - Algorithmically stable
+ * The DSC stablecoin has the following properties:
+ * - Collateral: Exogenous (wETH & wBTC)
+ * - Stability: Dollar pegged
+ * - Minting: Algorithmic
  *
  * DSC is similar to DAI if DAI had no governance, no fees, and was only backed by
  * wETH and wBTC.

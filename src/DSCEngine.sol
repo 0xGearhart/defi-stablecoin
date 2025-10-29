@@ -4,12 +4,22 @@ pragma solidity ^0.8.19;
 
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 
-/*
+/**
  * @title DSCEngine
  * @author Gearhart
+ * @notice This contract is the core of the DSC system. It handles all the logic for
+ * minting and redeeming DSC, as well as depositing and withdrawing collateral.
+ * @dev This contract is very loosely based on the MakeDAO DSS (DAI) system.
  *
- * @notice
- * @dev
+ * The System is designed to be as minimal as possible while maintaining a
+ * 1 token == 1$ peg.
+ * This DSC stablecoin has the following properties:
+ * - Exogenous collateral
+ * - Dollar pegged
+ * - Algorithmically stable
+ *
+ * DSC is similar to DAI if DAI had no governance, no fees, and was only backed by
+ * wETH and wBTC.
  */
 
 contract DSCEngine {

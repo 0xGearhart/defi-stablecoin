@@ -20,7 +20,7 @@ contract DeployDSC is Script {
             .getConfig();
 
         vm.startBroadcast(currentConfig.account);
-        dsc = new DecentralizedStableCoin();
+        dsc = new DecentralizedStableCoin(msg.sender);
         vm.stopBroadcast();
     }
 }

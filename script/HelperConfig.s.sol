@@ -19,7 +19,7 @@ abstract contract CodeConstants {
     uint256 public constant ETH_SEPOLIA_CHAIN_ID = 11155111;
     address public constant WETH_SEPOLIA_ADDRESS = 0xdd13E55209Fd76AfE204dBda4007C227904f0a81;
     address public constant WETH_SEPOLIA_PRICE_FEED_ADDRESS = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
-    address public constant WBTC_SEPOLIA_ADDRESS = 0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063;
+    address public constant WBTC_SEPOLIA_ADDRESS = 0x7079A35DAAa3fEc63F52496CAbBFac0f9D5beB28;
     address public constant WBTC_SEPOLIA_PRICE_FEED_ADDRESS = 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43;
     // local chain id and info
     uint256 public constant LOCAL_CHAIN_ID = 31337;

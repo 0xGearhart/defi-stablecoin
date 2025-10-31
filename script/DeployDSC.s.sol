@@ -3,24 +3,35 @@
 pragma solidity ^0.8.19;
 
 import {Script} from "forge-std/Script.sol";
-import {HelperConfig} from "./HelperConfig.s.sol";
+import {HelperConfig, CodeConstants} from "./HelperConfig.s.sol";
+import {DSCEngine} from "../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../src/DecentralizedStableCoin.sol";
 
-contract DeployDSC is Script {
-    function run() external returns (DecentralizedStableCoin, HelperConfig) {
+contract DeployDSC is Script, CodeConstants {
+    address[] public tokenAddresses;
+    address[] public priceFeedAddresses;
+
+    function run() external returns (DecentralizedStableCoin, DSCEngine, HelperConfig) {
         return deployContract();
     }
 
     function deployContract()
         public
-        returns (DecentralizedStableCoin dsc, HelperConfig helperConfig)
+        returns (DecentralizedStableCoin dsc, DSCEngine dscEngine, HelperConfig currentConfig)
     {
-        helperConfig = new HelperConfig();
-        HelperConfig.NetworkConfig memory currentConfig = helperConfig
-            .getConfig();
-
-        vm.startBroadcast(currentConfig.account);
-        dsc = new DecentralizedStableCoin(msg.sender);
+        // get deploy info for current chainid
+        currentConfig = new HelperConfig();
+        (address ethUsdPriceFeed, address btcUsdPriceFeed, address weth, address wbtc, address account) =
+            currentConfig.activeNetworkConfig();
+        // load arrays for constructor
+        tokenAddresses = [weth, wbtc];
+        priceFeedAddresses = [ethUsdPriceFeed, btcUsdPriceFeed];
+        // deploy using appropriate deployer key for given chainid
+        vm.startBroadcast(account);
+        dsc = new DecentralizedStableCoin(DSC_NAME, DSC_SYMBOL);
+        dscEngine = new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+        // transfer ownership to DSCEngine for minting and burning
+        dsc.transferOwnership(address(dscEngine));
         vm.stopBroadcast();
     }
 }

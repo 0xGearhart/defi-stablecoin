@@ -2,11 +2,10 @@
 pragma solidity ^0.8.19;
 
 import {Test, console} from "forge-std/Test.sol";
-// import {DeployDSC} from "../../script/DeployDSC.s.sol";
-// import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {CodeConstants} from "../../script/HelperConfig.s.sol";
 import {DecentralizedStableCoin, Ownable} from "../../src/DecentralizedStableCoin.sol";
 
-contract DecentralizedStableCoinTest is Test {
+contract DecentralizedStableCoinTest is Test, CodeConstants {
     DecentralizedStableCoin public dsc;
     address user1 = makeAddr("user1");
     address user2 = makeAddr("user2");
@@ -14,8 +13,8 @@ contract DecentralizedStableCoinTest is Test {
     uint256 public startingUserBalance = 10 ether;
 
     function setUp() external {
-        dsc = new DecentralizedStableCoin(msg.sender);
-        owner = msg.sender;
+        dsc = new DecentralizedStableCoin(DSC_NAME, DSC_SYMBOL);
+        owner = address(this);
         vm.deal(user1, startingUserBalance);
         vm.deal(user2, startingUserBalance);
     }
@@ -27,34 +26,21 @@ contract DecentralizedStableCoinTest is Test {
     function testMintFailsWhenCalledByAnyoneOtherThanOwner() external {
         uint256 amount = 1000;
         vm.prank(user1);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                address(user1)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(user1)));
         dsc.mint(user1, amount);
     }
 
     function testMintFailsWhenToAddressIsZeroAddress() external {
         uint256 amount = 1000;
         vm.prank(owner);
-        vm.expectRevert(
-            DecentralizedStableCoin
-                .DecentralizedStableCoin__NotZeroAddress
-                .selector
-        );
+        vm.expectRevert(DecentralizedStableCoin.DecentralizedStableCoin__NotZeroAddress.selector);
         dsc.mint(address(0), amount);
     }
 
     function testMintFailsWhenAmountIsZero() external {
         uint256 amount = 0;
         vm.prank(owner);
-        vm.expectRevert(
-            DecentralizedStableCoin
-                .DecentralizedStableCoin__AmountMustBeMoreThanZero
-                .selector
-        );
+        vm.expectRevert(DecentralizedStableCoin.DecentralizedStableCoin__AmountMustBeMoreThanZero.selector);
         dsc.mint(owner, amount);
     }
 
@@ -81,34 +67,21 @@ contract DecentralizedStableCoinTest is Test {
     function testBurnFailsWhenCalledByAnyoneOtherThanOwner() external {
         uint256 amount = 1000;
         vm.prank(user1);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Ownable.OwnableUnauthorizedAccount.selector,
-                address(user1)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(user1)));
         dsc.burn(amount);
     }
 
     function testBurnFailsWhenAmountIsZero() external {
         uint256 amount = 0;
         vm.prank(owner);
-        vm.expectRevert(
-            DecentralizedStableCoin
-                .DecentralizedStableCoin__AmountMustBeMoreThanZero
-                .selector
-        );
+        vm.expectRevert(DecentralizedStableCoin.DecentralizedStableCoin__AmountMustBeMoreThanZero.selector);
         dsc.burn(amount);
     }
 
     function testBurnFailsWhenAmountIsGreaterThanBalance() external minted {
         uint256 amount = 1001;
         vm.prank(owner);
-        vm.expectRevert(
-            DecentralizedStableCoin
-                .DecentralizedStableCoin__BurnAmountExceedsBalance
-                .selector
-        );
+        vm.expectRevert(DecentralizedStableCoin.DecentralizedStableCoin__BurnAmountExceedsBalance.selector);
         dsc.burn(amount);
     }
 

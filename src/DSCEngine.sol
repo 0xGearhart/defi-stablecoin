@@ -33,15 +33,15 @@ contract DSCEngine is ReentrancyGuard {
                                  ERRORS
     //////////////////////////////////////////////////////////////*/
 
+    error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+    error DSCEngine__AmountMustBeMoreThanZero();
+    error DSCEngine__NotApprovedToken();
+    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DSCEngine__TransferFailed();
     error DSCEngine__MintFailed();
     error DSCEngine__BurnFailed();
-    error DSCEngine__TransferFailed();
-    error DSCEngine__NotApprovedToken();
-    error DSCEngine__HealthFactorNotImproved();
-    error DSCEngine__AmountMustBeMoreThanZero();
     error DSCEngine__UserNotEligibleForLiquidation();
-    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
-    error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+    error DSCEngine__HealthFactorNotImproved();
 
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
@@ -54,11 +54,11 @@ contract DSCEngine is ReentrancyGuard {
     DecentralizedStableCoin private immutable i_dsc;
 
     uint256 private constant MIN_HEALTH_FACTOR = 1e18;
-    uint256 private constant LIQUIDATION_THRESHOLD = 50; // 200% overcollateralized
-    uint256 private constant LIQUIDATION_PRECISION = 100;
     uint256 private constant PRECISION = 1e18;
     uint256 private constant ADDITIONAL_PRICE_FEED_PRECISION = 1e10;
-    uint256 private constant LIQUIDATION_BONUS = 10; // equates to a 10% bonus to be paid to the liquidator
+    uint256 private constant LIQUIDATION_THRESHOLD = 50; // liquidation risk when debt/collateral falls below (50/100) ==> 200% overcollateralized
+    uint256 private constant LIQUIDATION_BONUS = 10; // 10% bonus to be paid to the liquidator (10/100)
+    uint256 private constant LIQUIDATION_PRECISION = 100;
 
     mapping(address token => address priceFeed) private s_priceFeeds;
     mapping(address user => uint256 amountDscMinted) private s_dscMinted;
@@ -188,7 +188,7 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     /**
-     * @notice Withdrawing collateral will reduce health factor
+     * @notice Withdraw collateral. Withdrawing collateral will reduce health factor
      * @param collateralTokenAddress The address of the token to be withdrawn
      * @param amountCollateral The amount of collateral tokens to withdraw
      */
@@ -280,13 +280,10 @@ contract DSCEngine is ReentrancyGuard {
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
         uint256 collateralAdjustedForThreshold =
             ((collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION) * PRECISION;
-        // Example 1
-        // $150 ETH / 100 DSC
-        // 150 * 50 = 7500 / 100 = (75 / 100) < 1 == bad health factor, needs liquidating
-        // Example 2
-        // $1000 ETH / 100 DSC
-        // 1000 * 50 = 50000 / 100 = (500 / 100) > 1 == good health factor, large margin before liquidation
-        if (collateralValueInUsd == 0) {
+        if (totalDscMinted == 0 && collateralValueInUsd == 0) {
+            // if user has no collateral & no DSC then health ok, otherwise withdrawing all collateral fails due to broken health factor
+            return MIN_HEALTH_FACTOR;
+        } else if (collateralValueInUsd == 0) {
             // if no collateral deposited then health is zero
             return 0;
         } else if (totalDscMinted == 0) {
@@ -294,6 +291,12 @@ contract DSCEngine is ReentrancyGuard {
             return collateralAdjustedForThreshold;
         } else {
             // return true health factor
+            // Example 1
+            // $150 ETH / 100 DSC
+            // 150 * 50 = 7500 / 100 = (75 / 100) < 1 == bad health factor, needs liquidating
+            // Example 2
+            // $1000 ETH / 100 DSC
+            // 1000 * 50 = 50000 / 100 = (500 / 100) > 1 == good health factor, large margin before liquidation
             return collateralAdjustedForThreshold / totalDscMinted;
         }
     }

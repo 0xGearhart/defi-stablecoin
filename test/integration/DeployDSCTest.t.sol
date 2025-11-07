@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
-import {DSCEngine} from "../../src/DSCEngine.sol";
 import {DeployDSC} from "../../script/DeployDSC.s.sol";
-import {HelperConfig, CodeConstants} from "../../script/HelperConfig.s.sol";
+import {CodeConstants, HelperConfig} from "../../script/HelperConfig.s.sol";
+import {DSCEngine} from "../../src/DSCEngine.sol";
+import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {Test, console} from "forge-std/Test.sol";
 
 contract DecentralizedStableCoinTest is Test, CodeConstants {
@@ -45,12 +45,12 @@ contract DecentralizedStableCoinTest is Test, CodeConstants {
     //////////////////////////////////////////////////////////////*/
 
     function testDscEngineEthUsdPriceFeedWasSetCorrectly() external view {
-        assertEq(dscEngine.getPriceFeedAddress(weth), ethUsdPriceFeed);
         assert(dscEngine.getPriceFeedAddress(weth) != address(0));
+        assertEq(dscEngine.getPriceFeedAddress(weth), ethUsdPriceFeed);
     }
 
     function testDscEngineBtcUsdPriceFeedWasSetCorrectly() external view {
-        assertEq(dscEngine.getPriceFeedAddress(wbtc), btcUsdPriceFeed);
         assert(dscEngine.getPriceFeedAddress(wbtc) != address(0));
+        assertEq(dscEngine.getPriceFeedAddress(wbtc), btcUsdPriceFeed);
     }
 }

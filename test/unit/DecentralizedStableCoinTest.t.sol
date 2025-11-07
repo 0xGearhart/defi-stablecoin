@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Test, console} from "forge-std/Test.sol";
 import {CodeConstants} from "../../script/HelperConfig.s.sol";
 import {DecentralizedStableCoin, Ownable} from "../../src/DecentralizedStableCoin.sol";
+import {Test, console} from "forge-std/Test.sol";
 
 contract DecentralizedStableCoinTest is Test, CodeConstants {
     DecentralizedStableCoin public dsc;

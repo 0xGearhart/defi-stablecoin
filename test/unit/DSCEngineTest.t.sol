@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {DeployDSC} from "../../script/DeployDSC.s.sol";
 import {CodeConstants, HelperConfig} from "../../script/HelperConfig.s.sol";
-import {DSCEngine} from "../../src/DSCEngine.sol";
+import {DSCEngine, OracleLib} from "../../src/DSCEngine.sol";
 import {DecentralizedStableCoin, ERC20Burnable, Ownable} from "../../src/DecentralizedStableCoin.sol";
 import {MockV3Aggregator} from "../mocks/MockV3Aggregator.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
@@ -571,6 +571,17 @@ contract DSCEngineTest is Test, CodeConstants {
                               VIEW & PURE
     //////////////////////////////////////////////////////////////*/
 
+    function testGetUsdValueShouldFailIfPriceIsStale() external {
+        uint256 ethAmount = 15 ether;
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(ethUsdPriceFeed);
+        (,,, uint256 updatedAt,) = priceFeed.latestRoundData();
+        uint256 staleAt = updatedAt + 3 hours + 1;
+        vm.warp(staleAt);
+        vm.expectRevert(OracleLib.OracleLib__StalePrice.selector);
+        vm.prank(user1);
+        dscEngine.getUsdValue(wethAddress, ethAmount);
+    }
+
     function testGetUsdValue() external view {
         uint256 ethAmount = 15 ether;
         AggregatorV3Interface priceFeed = AggregatorV3Interface(ethUsdPriceFeed);
@@ -588,6 +599,17 @@ contract DSCEngineTest is Test, CodeConstants {
         assertEq(expectedUsd, actualUsd);
     }
 
+    function testGetTokenAmountFromUsdShouldFailIfPriceIsStale() external {
+        uint256 usdAmount = 100 ether;
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(ethUsdPriceFeed);
+        (,,, uint256 updatedAt,) = priceFeed.latestRoundData();
+        uint256 staleAt = updatedAt + 3 hours + 1;
+        vm.warp(staleAt);
+        vm.expectRevert(OracleLib.OracleLib__StalePrice.selector);
+        vm.prank(user1);
+        dscEngine.getTokenAmountFromUsd(wethAddress, usdAmount);
+    }
+
     function testGetTokenAmountFromUsd() external view {
         uint256 usdAmount = 100 ether;
         AggregatorV3Interface priceFeed = AggregatorV3Interface(ethUsdPriceFeed);
@@ -602,6 +624,16 @@ contract DSCEngineTest is Test, CodeConstants {
         uint256 expectedWethAmount = 0.05 ether;
         uint256 actualWethAmount = dscEngine.getTokenAmountFromUsd(wethAddress, usdAmount);
         assertEq(expectedWethAmount, actualWethAmount);
+    }
+
+    function testGetHealthFactorShouldFailIfPriceIsStale() external usersFunded usersDeposited usersMinted {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(ethUsdPriceFeed);
+        (,,, uint256 updatedAt,) = priceFeed.latestRoundData();
+        uint256 staleAt = updatedAt + 3 hours + 1;
+        vm.warp(staleAt);
+        vm.expectRevert(OracleLib.OracleLib__StalePrice.selector);
+        vm.prank(user1);
+        dscEngine.getHealthFactor(user1);
     }
 
     function testGetHealthFactorReturnsCorrectValuesForFringeStates() external usersFunded {

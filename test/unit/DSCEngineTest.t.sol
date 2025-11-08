@@ -629,4 +629,33 @@ contract DSCEngineTest is Test, CodeConstants {
             ((collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION) * PRECISION;
         assertEq(dscEngine.getHealthFactor(user1), collateralAdjustedForThreshold / dscMinted);
     }
+
+    function testGetHealthFactorEstimate() external usersFunded usersDeposited usersMinted {
+        (uint256 dscMinted, uint256 collateralValueInUsd) = dscEngine.getAccountInformation(user1);
+        assertEq(dscEngine.getHealthFactor(user1), dscEngine.getHealthFactorEstimate(dscMinted, collateralValueInUsd));
+    }
+
+    function testGetMinHealthFactor() external view {
+        assertEq(dscEngine.getMinHealthFactor(), MIN_HEALTH_FACTOR);
+    }
+
+    function testGetPrecision() external view {
+        assertEq(dscEngine.getPrecision(), PRECISION);
+    }
+
+    function testGetAdditionalPriceFeedPrecision() external view {
+        assertEq(dscEngine.getAdditionalPriceFeedPrecision(), ADDITIONAL_PRICE_FEED_PRECISION);
+    }
+
+    function testGetLiquidationBonus() external view {
+        assertEq(dscEngine.getLiquidationBonus(), LIQUIDATION_BONUS);
+    }
+
+    function testGetLiquidationThreshold() external view {
+        assertEq(dscEngine.getLiquidationThreshold(), LIQUIDATION_THRESHOLD);
+    }
+
+    function testGetLiquidationPrecision() external view {
+        assertEq(dscEngine.getLiquidationPrecision(), LIQUIDATION_PRECISION);
+    }
 }

@@ -53,4 +53,8 @@ contract DecentralizedStableCoinTest is Test, CodeConstants {
         assert(dscEngine.getPriceFeedAddress(wbtc) != address(0));
         assertEq(dscEngine.getPriceFeedAddress(wbtc), btcUsdPriceFeed);
     }
+
+    function testGetDecentralizedStableCoin() external view {
+        assertEq(dscEngine.getDecentralizedStableCoin(), address(dsc));
+    }
 }

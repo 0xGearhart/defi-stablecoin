@@ -1,4 +1,6 @@
 [profile.default]
+optimizer = true
+optimizer_runs = 200
 src = "src"
 out = "out"
 libs = ["lib"]
@@ -11,12 +13,29 @@ fs_permissions = [
     { access = "read", path = "./reports" },
 ]
 
+[fmt]
+single_line_statement_blocks = "multi"
+multiline_func_header = "all"
+number_underscore = "thousands"
+sort_imports = true
+# ignore = ["./script/DeployDSC.s.sol", "./script/HelperConfig.s.sol"]
+# contract_new_lines = false
+# bracket_spacing = false
+# int_types = "long"
+# line_length = 120
+# tab_width = 4
+# quote_style = "double"
+# wrap_comments = false
+
 [fuzz]
-runs = 256
+runs = 1000
 
 [invariant]
-runs = 64
-depth = 64
+runs = 1000
+depth = 128
+
+# false is great for open invariant tests the try anything on any function in any order. Better for simple systems
+# true is great when using handlers that result in valid calls during tests. Better for complex systems
 fail_on_revert = true
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

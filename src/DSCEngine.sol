@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.19;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title DSCEngine
@@ -118,7 +118,9 @@ contract DSCEngine is ReentrancyGuard {
         address collateralTokenAddress,
         uint256 amountCollateral,
         uint256 amountDscToMint
-    ) external {
+    )
+        external
+    {
         depositCollateral(collateralTokenAddress, amountCollateral);
         mintDsc(amountDscToMint);
     }
@@ -129,7 +131,11 @@ contract DSCEngine is ReentrancyGuard {
      * @param amountCollateral The amount of collateral tokens to withdraw
      * @param amountDscToBurn The amount of DSC to be exchanged for collateral
      */
-    function redeemCollateralForDsc(address collateralTokenAddress, uint256 amountCollateral, uint256 amountDscToBurn)
+    function redeemCollateralForDsc(
+        address collateralTokenAddress,
+        uint256 amountCollateral,
+        uint256 amountDscToBurn
+    )
         external
     {
         burnDsc(amountDscToBurn);
@@ -142,7 +148,11 @@ contract DSCEngine is ReentrancyGuard {
      * @param collateralTokenAddress Address of collateral type to be liquidated
      * @param debtToCover Amount of DSC to burn in exchange for users collateral
      */
-    function liquidate(address userToBeLiquidated, address collateralTokenAddress, uint256 debtToCover)
+    function liquidate(
+        address userToBeLiquidated,
+        address collateralTokenAddress,
+        uint256 debtToCover
+    )
         external
         moreThanZero(debtToCover)
         nonReentrant
@@ -173,7 +183,10 @@ contract DSCEngine is ReentrancyGuard {
      * @param collateralTokenAddress The address of the token to deposit as collateral
      * @param amountCollateral The amount of collateral tokens to deposit
      */
-    function depositCollateral(address collateralTokenAddress, uint256 amountCollateral)
+    function depositCollateral(
+        address collateralTokenAddress,
+        uint256 amountCollateral
+    )
         public
         moreThanZero(amountCollateral)
         onlyApprovedTokens(collateralTokenAddress)
@@ -192,7 +205,10 @@ contract DSCEngine is ReentrancyGuard {
      * @param collateralTokenAddress The address of the token to be withdrawn
      * @param amountCollateral The amount of collateral tokens to withdraw
      */
-    function redeemCollateral(address collateralTokenAddress, uint256 amountCollateral)
+    function redeemCollateral(
+        address collateralTokenAddress,
+        uint256 amountCollateral
+    )
         public
         moreThanZero(amountCollateral)
         nonReentrant
@@ -250,7 +266,9 @@ contract DSCEngine is ReentrancyGuard {
         address redeemedTo,
         address collateralTokenAddress,
         uint256 amountCollateral
-    ) private {
+    )
+        private
+    {
         s_collateralDeposited[redeemedFrom][collateralTokenAddress] -= amountCollateral;
         emit CollateralRedeemed(redeemedFrom, redeemedTo, collateralTokenAddress, amountCollateral);
         bool success = IERC20(collateralTokenAddress).transfer(redeemedTo, amountCollateral);
@@ -278,27 +296,7 @@ contract DSCEngine is ReentrancyGuard {
      */
     function _healthFactor(address user) private view returns (uint256) {
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
-        uint256 collateralAdjustedForThreshold =
-            ((collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION) * PRECISION;
-        if (totalDscMinted == 0 && collateralValueInUsd == 0) {
-            // if user has no collateral & no DSC then health ok, otherwise withdrawing all collateral fails due to broken health factor
-            return MIN_HEALTH_FACTOR;
-        } else if (collateralValueInUsd == 0) {
-            // if no collateral deposited then health is zero
-            return 0;
-        } else if (totalDscMinted == 0) {
-            // if no dsc minted then return to avoid divide by zero
-            return collateralAdjustedForThreshold;
-        } else {
-            // return true health factor
-            // Example 1
-            // $150 ETH / 100 DSC
-            // 150 * 50 = 7500 / 100 = (75 / 100) < 1 == bad health factor, needs liquidating
-            // Example 2
-            // $1000 ETH / 100 DSC
-            // 1000 * 50 = 50000 / 100 = (500 / 100) > 1 == good health factor, large margin before liquidation
-            return collateralAdjustedForThreshold / totalDscMinted;
-        }
+        return _calculateHealthFactor(totalDscMinted, collateralValueInUsd);
     }
 
     function _onlyApprovedTokens(address token) private view {
@@ -318,6 +316,30 @@ contract DSCEngine is ReentrancyGuard {
         if (userHealthFactor < MIN_HEALTH_FACTOR) {
             revert DSCEngine__BreaksHealthFactor(userHealthFactor);
         }
+    }
+
+    function _calculateHealthFactor(
+        uint256 totalDscMinted,
+        uint256 collateralValueInUsd
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        // if 0 dsc minted then return max health factor
+        if (totalDscMinted == 0) {
+            return type(uint256).max;
+        }
+        // calculate health factor
+        // Example 1
+        // $150 ETH / 100 DSC
+        // 150 * 50 = 7500 / 100 = (75 / 100) < 1 == bad health factor, needs liquidating
+        // Example 2
+        // $1000 ETH / 100 DSC
+        // 1000 * 50 = 50000 / 100 = (500 / 100) > 1 == good health factor, large margin before liquidation
+        uint256 collateralAdjustedForThreshold =
+            ((collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION) * PRECISION;
+        return collateralAdjustedForThreshold / totalDscMinted;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -367,12 +389,96 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     /**
+     * @notice Gets the addresses of all approved collateral tokens
+     * @return amount Array of collateral token addresses
+     */
+    function getCollateralTokenAddresses() external view returns (address[] memory) {
+        return s_collateralTokens;
+    }
+
+    /**
+     * @notice Gets address of DSC token contract
+     * @return Token address
+     */
+    function getDecentralizedStableCoin() external view returns (address) {
+        return address(i_dsc);
+    }
+
+    /**
+     * @notice Gets minimum health factor a user can have without being liquidated
+     * @return Minimum health factor
+     */
+    function getMinHealthFactor() external view returns (uint256) {
+        return MIN_HEALTH_FACTOR;
+    }
+
+    /**
+     * @notice Gets precision used as denominator during value calculations
+     * @return Decimal precision
+     */
+    function getPrecision() external view returns (uint256) {
+        return PRECISION;
+    }
+
+    /**
+     * @notice Gets additional precision needed to convert price feed values to valid decimal representations
+     * @return Additional price feed precision
+     */
+    function getAdditionalPriceFeedPrecision() external view returns (uint256) {
+        return ADDITIONAL_PRICE_FEED_PRECISION;
+    }
+
+    /**
+     * @notice Gets percent bonus paid to liquidator during successful liquidation
+     * @return Liquidation bonus percent
+     */
+    function getLiquidationBonus() external view returns (uint256) {
+        return LIQUIDATION_BONUS;
+    }
+
+    /**
+     * @notice Gets numerator used during liquidation and health factor calculations
+     * @return Liquidation threshold
+     */
+    function getLiquidationThreshold() external view returns (uint256) {
+        return LIQUIDATION_THRESHOLD;
+    }
+
+    /**
+     * @notice Gets denominator used during liquidation and health factor calculations
+     * @return Liquidation precision
+     */
+    function getLiquidationPrecision() external view returns (uint256) {
+        return LIQUIDATION_PRECISION;
+    }
+
+    /**
+     * @notice Gets the health factor for a simulated account
+     * @param totalDscMinted Amount of DSC minted by simulated account
+     * @param collateralValueInUsd Total collateral value of all deposits for simulated account
+     * @return Estimated health factor based off given parameters
+     */
+    function getHealthFactorEstimate(
+        uint256 totalDscMinted,
+        uint256 collateralValueInUsd
+    )
+        external
+        pure
+        returns (uint256)
+    {
+        return _calculateHealthFactor(totalDscMinted, collateralValueInUsd);
+    }
+
+    /**
      * @notice Gets the amount of collateral tokens equivalent in value to the given USD amount
      * @param collateralTokenAddress Address of collateral token
      * @param amountUsdInWei Amount of USD with 18 decimals (1e18 = $1)
      * @return Amount of collateral tokens equivalent in value to the given USD amount
      */
-    function getTokenAmountFromUsd(address collateralTokenAddress, uint256 amountUsdInWei)
+    function getTokenAmountFromUsd(
+        address collateralTokenAddress,
+        uint256 amountUsdInWei
+    )
         public
         view
         returns (uint256)

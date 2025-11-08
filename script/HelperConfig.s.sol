@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Script} from "forge-std/Script.sol";
 import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
+import {Script} from "forge-std/Script.sol";
 
 abstract contract CodeConstants {
     // DSC name and symbol
@@ -16,13 +16,13 @@ abstract contract CodeConstants {
     address public constant WBTC_MAINNET_ADDRESS = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
     address public constant WBTC_MAINNET_PRICE_FEED_ADDRESS = 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c;
     // sepolia chain id and info
-    uint256 public constant ETH_SEPOLIA_CHAIN_ID = 11155111;
+    uint256 public constant ETH_SEPOLIA_CHAIN_ID = 11_155_111;
     address public constant WETH_SEPOLIA_ADDRESS = 0xdd13E55209Fd76AfE204dBda4007C227904f0a81;
     address public constant WETH_SEPOLIA_PRICE_FEED_ADDRESS = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
     address public constant WBTC_SEPOLIA_ADDRESS = 0x7079A35DAAa3fEc63F52496CAbBFac0f9D5beB28;
     address public constant WBTC_SEPOLIA_PRICE_FEED_ADDRESS = 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43;
     // local chain id and info
-    uint256 public constant LOCAL_CHAIN_ID = 31337;
+    uint256 public constant LOCAL_CHAIN_ID = 31_337;
     // mock initialize info
     uint8 public constant DECIMALS = 8;
     int256 public constant MOCK_ETH_USD_PRICE = 2000e8;

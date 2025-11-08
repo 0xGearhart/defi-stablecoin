@@ -3,6 +3,7 @@
 pragma solidity ^0.8.19;
 
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
+import {OracleLib} from "./libraries/OracleLib.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -46,6 +47,8 @@ contract DSCEngine is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
     //////////////////////////////////////////////////////////////*/
+
+    using OracleLib for AggregatorV3Interface;
 
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
@@ -408,7 +411,7 @@ contract DSCEngine is ReentrancyGuard {
      * @notice Gets minimum health factor a user can have without being liquidated
      * @return Minimum health factor
      */
-    function getMinHealthFactor() external view returns (uint256) {
+    function getMinHealthFactor() external pure returns (uint256) {
         return MIN_HEALTH_FACTOR;
     }
 
@@ -416,7 +419,7 @@ contract DSCEngine is ReentrancyGuard {
      * @notice Gets precision used as denominator during value calculations
      * @return Decimal precision
      */
-    function getPrecision() external view returns (uint256) {
+    function getPrecision() external pure returns (uint256) {
         return PRECISION;
     }
 
@@ -424,7 +427,7 @@ contract DSCEngine is ReentrancyGuard {
      * @notice Gets additional precision needed to convert price feed values to valid decimal representations
      * @return Additional price feed precision
      */
-    function getAdditionalPriceFeedPrecision() external view returns (uint256) {
+    function getAdditionalPriceFeedPrecision() external pure returns (uint256) {
         return ADDITIONAL_PRICE_FEED_PRECISION;
     }
 
@@ -432,7 +435,7 @@ contract DSCEngine is ReentrancyGuard {
      * @notice Gets percent bonus paid to liquidator during successful liquidation
      * @return Liquidation bonus percent
      */
-    function getLiquidationBonus() external view returns (uint256) {
+    function getLiquidationBonus() external pure returns (uint256) {
         return LIQUIDATION_BONUS;
     }
 
@@ -440,7 +443,7 @@ contract DSCEngine is ReentrancyGuard {
      * @notice Gets numerator used during liquidation and health factor calculations
      * @return Liquidation threshold
      */
-    function getLiquidationThreshold() external view returns (uint256) {
+    function getLiquidationThreshold() external pure returns (uint256) {
         return LIQUIDATION_THRESHOLD;
     }
 
@@ -448,7 +451,7 @@ contract DSCEngine is ReentrancyGuard {
      * @notice Gets denominator used during liquidation and health factor calculations
      * @return Liquidation precision
      */
-    function getLiquidationPrecision() external view returns (uint256) {
+    function getLiquidationPrecision() external pure returns (uint256) {
         return LIQUIDATION_PRECISION;
     }
 
@@ -484,7 +487,7 @@ contract DSCEngine is ReentrancyGuard {
         returns (uint256)
     {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[collateralTokenAddress]);
-        (, int256 price,,,) = priceFeed.latestRoundData();
+        (, int256 price,,,) = priceFeed.stalePriceFeedCheckLatestRoundData();
         return (amountUsdInWei * PRECISION) / (uint256(price) * ADDITIONAL_PRICE_FEED_PRECISION);
     }
 
@@ -511,7 +514,7 @@ contract DSCEngine is ReentrancyGuard {
      */
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
-        (, int256 price,,,) = priceFeed.latestRoundData();
+        (, int256 price,,,) = priceFeed.stalePriceFeedCheckLatestRoundData();
         // 1 eth = $1000
         // the returned value from chainlink will be 1000 * 1e8
         // need to change price to uint256 and get correct decimals before continuing

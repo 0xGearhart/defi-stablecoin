@@ -31,7 +31,7 @@ sort_imports = true
 runs = 1000
 
 [invariant]
-runs = 1000
+runs = 2000
 depth = 128
 
 # false is great for open invariant tests the try anything on any function in any order. Better for simple systems

@@ -1,66 +1,80 @@
-## Foundry
+# Foundry Defi Stablecoin
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
 
-Foundry consists of:
+# About
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
 
-## Documentation
+- [Foundry Defi Stablecoin](#foundry-defi-stablecoin)
+- [About](#about)
+- [Getting Started](#getting-started)
+  - [Requirements](#requirements)
+  - [Quickstart](#quickstart)
+- [Usage](#usage)
+  - [Start a local node](#start-a-local-node)
+  - [Deploy - Locally](#deploy---locally)
+  - [Testing](#testing)
+    - [Testing Coverage](#testing-coverage)
+- [Deployment to a testnet or mainnet](#deployment-to-a-testnet-or-mainnet)
+  - [Scripts](#scripts)
+  - [Estimate gas](#estimate-gas)
+- [Project design and assumptions](#project-design-and-assumptions)
+  - [Notes](#notes)
 
-https://book.getfoundry.sh/
+# Getting Started
 
-## Usage
+## Requirements
 
-### Build
+- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
-```shell
-$ forge build
+- [foundry](https://getfoundry.sh/)
+
+## Quickstart
+
+```
+git clone https://github.com/0xGearhart/foundry-defi-stablecoin
+cd foundry-defi-stablecoin
+forge build
 ```
 
-### Test
+# Usage
 
-```shell
-$ forge test
+## Start a local node
+
+```
+make anvil
 ```
 
-### Format
+## Deploy - Locally
 
-```shell
-$ forge fmt
+This will default to your local node. You need to have it running in another terminal in order for it to deploy.
+
+```
+make deploy
 ```
 
-### Gas Snapshots
 
-```shell
-$ forge snapshot
+## Testing
+
+```
+forge test
 ```
 
-### Anvil
+### Testing Coverage
 
-```shell
-$ anvil
+```
+forge coverage
 ```
 
-### Deploy
+# Deployment to a testnet or mainnet
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
 
-### Cast
+## Scripts
 
-```shell
-$ cast <subcommand>
-```
 
-### Help
+## Estimate gas
 
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+
+# Project design and assumptions
+
+
+## Notes

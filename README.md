@@ -140,7 +140,7 @@ foundry-defi-stablecoin/
 ```bash
 git clone https://github.com/0xGearhart/foundry-defi-stablecoin
 cd foundry-defi-stablecoin
-forge install
+make install
 forge build
 ```
 
@@ -216,7 +216,7 @@ make anvil
 Deploy to local node (in another terminal):
 
 ```bash
-make deploy
+make deployDSC
 ```
 
 ### Interact with Contract
@@ -225,10 +225,10 @@ Once deployed, you can interact with the DSC system using cast:
 
 ```bash
 # Approve collateral spending
-cast send <COLLATERAL_ADDRESS> "approve(address,uint256)" <DSC_ENGINE_ADDRESS> <AMOUNT> --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY
+cast send <COLLATERAL_ADDRESS> "approve(address,uint256)" <DSC_ENGINE_ADDRESS> <AMOUNT> --rpc-url $SEPOLIA_RPC_URL --account defaultKey
 
 # Deposit collateral (wETH example)
-cast send <DSC_ENGINE_ADDRESS> "depositCollateral(address,uint256)" <WETH_ADDRESS> <AMOUNT> --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY
+cast send <DSC_ENGINE_ADDRESS> "depositCollateral(address,uint256)" <WETH_ADDRESS> <AMOUNT> --rpc-url $SEPOLIA_RPC_URL --account defaultKey
 
 # Mint DSC
 cast send <DSC_ENGINE_ADDRESS> "mintDsc(uint256)" <DSC_AMOUNT> --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY
@@ -247,13 +247,13 @@ cast call <DSC_ENGINE_ADDRESS> "getCollateralValueInUsd(address,address)" <USER_
 Deploy to Sepolia:
 
 ```bash
-make deploy ARGS="--network sepolia"
+make deployDSC ARGS="--network sepolia"
 ```
 
 Or using forge directly:
 
 ```bash
-forge script script/DeployContract.s.sol:DeployContract --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY -vvvv
+forge script script/DeployContract.s.sol:DeployContract --rpc-url $SEPOLIA_RPC_URL --account defaultKey --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY -vvvv
 ```
 
 ### Verify Contract

@@ -64,15 +64,15 @@ The Decentralized Stablecoin (DSC) is a collateral-backed stablecoin system that
 │                      DSCEngine.sol                           │
 │                   (Core Protocol Logic)                      │
 │                                                              │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │  • Deposit/Withdraw Collateral (wETH, wBTC)        │    │
-│  │  • Mint/Burn DSC Tokens                            │    │
-│  │  • Health Factor Calculation                       │    │
-│  │  • Liquidation Logic                               │    │
-│  │  • Reentrancy Protection (ReentrancyGuard)        │    │
-│  └─────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────┐     │
+│  │  • Deposit/Withdraw Collateral (wETH, wBTC)         │     │
+│  │  • Mint/Burn DSC Tokens                             │     │
+│  │  • Health Factor Calculation                        │     │
+│  │  • Liquidation Logic                                │     │
+│  │  • Reentrancy Protection (ReentrancyGuard)          │     │
+│  └─────────────────────────────────────────────────────┘     │
 │                                                              │
-└───────────────┬──────────────────────────┬──────────────────┘
+└───────────────┬──────────────────────────┬──────────────────-┘
                 │                          │
                 ▼                          ▼
     ┌───────────────────────┐  ┌──────────────────────┐

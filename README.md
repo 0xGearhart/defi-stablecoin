@@ -162,6 +162,21 @@ forge build
 3. **Get testnet ETH:**
    - Sepolia Faucet: [Google Cloud Faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia)
 
+4. **Configure Makefile**
+- Change account name in Makefile to the name of your desired encrypted key 
+  - change "--account defaultKey" to "--account <YOUR_ENCRYPTED_KEY_NAME>"
+  - check encrypted key names stored locally with:
+
+```bash
+cast wallet list
+```
+- **If no encrypted keys found**
+  - Encrypt private key to be used securely within foundry:
+
+```bash
+cast wallet import <account_name> --interactive
+```
+
 **⚠️ Security Warning:**
 - Never commit your `.env` file
 - Never use your mainnet private key for testing

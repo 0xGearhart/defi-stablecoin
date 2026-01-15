@@ -9,18 +9,33 @@ abstract contract CodeConstants {
     // DSC name and symbol
     string public constant DSC_NAME = "DecentralizedStableCoin";
     string public constant DSC_SYMBOL = "DSC";
-    // mainnet chain id and info
+    
+    // eth mainnet chain id and info
     uint256 public constant ETH_MAINNET_CHAIN_ID = 1;
     address public constant WETH_MAINNET_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address public constant WETH_MAINNET_PRICE_FEED_ADDRESS = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
     address public constant WBTC_MAINNET_ADDRESS = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
     address public constant WBTC_MAINNET_PRICE_FEED_ADDRESS = 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c;
-    // sepolia chain id and info
+    // eth sepolia chain id and info
     uint256 public constant ETH_SEPOLIA_CHAIN_ID = 11_155_111;
     address public constant WETH_SEPOLIA_ADDRESS = 0xdd13E55209Fd76AfE204dBda4007C227904f0a81;
     address public constant WETH_SEPOLIA_PRICE_FEED_ADDRESS = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
     address public constant WBTC_SEPOLIA_ADDRESS = 0x7079A35DAAa3fEc63F52496CAbBFac0f9D5beB28;
     address public constant WBTC_SEPOLIA_PRICE_FEED_ADDRESS = 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43;
+    
+    // arb mainnet chain id and info
+    uint256 public constant ARB_MAINNET_CHAIN_ID = 42_161;
+    address public constant WETH_MAINNET_ADDRESS;
+    address public constant WETH_MAINNET_PRICE_FEED_ADDRESS;
+    address public constant WBTC_MAINNET_ADDRESS;
+    address public constant WBTC_MAINNET_PRICE_FEED_ADDRESS;
+    // arb sepolia chain id and info
+    uint256 public constant ARB_SEPOLIA_CHAIN_ID = 421_614;
+    address public constant WETH_SEPOLIA_ADDRESS;
+    address public constant WETH_SEPOLIA_PRICE_FEED_ADDRESS;
+    address public constant WBTC_SEPOLIA_ADDRESS;
+    address public constant WBTC_SEPOLIA_PRICE_FEED_ADDRESS;
+    
     // local chain id and info
     uint256 public constant LOCAL_CHAIN_ID = 31_337;
     // mock initialize info

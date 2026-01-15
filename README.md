@@ -281,12 +281,12 @@ forge verify-contract <CONTRACT_ADDRESS> src/MainContract.sol:MainContract --cha
 
 ### Deployment Addresses
 
-| Network | Contract | Address | Explorer |
-|---------|----------|---------|----------|
-| Sepolia | DSCEngine | `TBD` | [View on Etherscan](https://sepolia.etherscan.io) |
-| Sepolia | DecentralizedStableCoin | `TBD` | [View on Etherscan](https://sepolia.etherscan.io) |
-| Mainnet | DSCEngine | `TBD` | [View on Etherscan](https://etherscan.io) |
-| Mainnet | DecentralizedStableCoin | `TBD` | [View on Etherscan](https://etherscan.io) |
+| Network | Contract                | Address | Explorer                                          |
+| ------- | ----------------------- | ------- | ------------------------------------------------- |
+| Sepolia | DSCEngine               | `TBD`   | [View on Etherscan](https://sepolia.etherscan.io) |
+| Sepolia | DecentralizedStableCoin | `TBD`   | [View on Etherscan](https://sepolia.etherscan.io) |
+| Mainnet | DSCEngine               | `TBD`   | [View on Etherscan](https://etherscan.io)         |
+| Mainnet | DecentralizedStableCoin | `TBD`   | [View on Etherscan](https://etherscan.io)         |
 
 ## Security
 
@@ -319,7 +319,7 @@ For production use, consider:
 ## Gas Optimization
 
 | Function                      | Gas Cost |
-|-------------------------------|----------|
+| ----------------------------- | -------- |
 | `depositCollateral`           | ~63,764  |
 | `depositCollateralAndMintDsc` | ~164,508 |
 | `redeemCollateral`            | ~107,850 |

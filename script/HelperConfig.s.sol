@@ -61,10 +61,10 @@ contract HelperConfig is Script, CodeConstants {
     constructor() {
         if (block.chainid == ETH_MAINNET_CHAIN_ID) {
             activeNetworkConfig = getEthMainnetConfig();
-        } else if (block.chainid == ETH_SEPOLIA_CHAIN_ID) {
-            activeNetworkConfig = getEthSepoliaConfig();
         } else if (block.chainid == ARB_MAINNET_CHAIN_ID) {
             activeNetworkConfig = getArbMainnetConfig();
+        } else if (block.chainid == ETH_SEPOLIA_CHAIN_ID) {
+            activeNetworkConfig = getEthSepoliaConfig();
         } else if (block.chainid == ARB_SEPOLIA_CHAIN_ID) {
             activeNetworkConfig = getArbSepoliaConfig();
         } else if (block.chainid == LOCAL_CHAIN_ID) {

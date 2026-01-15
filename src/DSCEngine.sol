@@ -43,6 +43,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__BurnFailed();
     error DSCEngine__UserNotEligibleForLiquidation();
     error DSCEngine__HealthFactorNotImproved();
+    error DSCEngine__InvalidPriceFeedOrTokenAddress();
 
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
@@ -101,6 +102,9 @@ contract DSCEngine is ReentrancyGuard {
             revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
         }
         for (uint256 i = 0; i < tokenAddressesLength; i++) {
+            if (tokenAddresses[i] == address(0) || priceFeedAddresses[i] == address(0)) {
+                revert DSCEngine__InvalidPriceFeedOrTokenAddress();
+            }
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
             s_collateralTokens.push(tokenAddresses[i]);
         }

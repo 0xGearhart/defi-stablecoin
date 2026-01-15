@@ -9,33 +9,34 @@ abstract contract CodeConstants {
     // DSC name and symbol
     string public constant DSC_NAME = "DecentralizedStableCoin";
     string public constant DSC_SYMBOL = "DSC";
-    
+
     // eth mainnet chain id and info
     uint256 public constant ETH_MAINNET_CHAIN_ID = 1;
-    address public constant WETH_MAINNET_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address public constant WETH_MAINNET_PRICE_FEED_ADDRESS = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
-    address public constant WBTC_MAINNET_ADDRESS = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
-    address public constant WBTC_MAINNET_PRICE_FEED_ADDRESS = 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c;
+    address public constant WETH_ETH_MAINNET_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address public constant WETH_ETH_MAINNET_PRICE_FEED_ADDRESS = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+    address public constant WBTC_ETH_MAINNET_ADDRESS = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+    address public constant WBTC_ETH_MAINNET_PRICE_FEED_ADDRESS = 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c;
     // eth sepolia chain id and info
     uint256 public constant ETH_SEPOLIA_CHAIN_ID = 11_155_111;
-    address public constant WETH_SEPOLIA_ADDRESS = 0xdd13E55209Fd76AfE204dBda4007C227904f0a81;
-    address public constant WETH_SEPOLIA_PRICE_FEED_ADDRESS = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
-    address public constant WBTC_SEPOLIA_ADDRESS = 0x7079A35DAAa3fEc63F52496CAbBFac0f9D5beB28;
-    address public constant WBTC_SEPOLIA_PRICE_FEED_ADDRESS = 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43;
-    
+    address public constant WETH_ETH_SEPOLIA_ADDRESS = 0xdd13E55209Fd76AfE204dBda4007C227904f0a81;
+    address public constant WETH_ETH_SEPOLIA_PRICE_FEED_ADDRESS = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
+    address public constant WBTC_ETH_SEPOLIA_ADDRESS = 0x7079A35DAAa3fEc63F52496CAbBFac0f9D5beB28;
+    address public constant WBTC_ETH_SEPOLIA_PRICE_FEED_ADDRESS = 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43;
+
+    // ToDo: fill in all these ARB addresses marked address(0)
     // arb mainnet chain id and info
     uint256 public constant ARB_MAINNET_CHAIN_ID = 42_161;
-    address public constant WETH_MAINNET_ADDRESS;
-    address public constant WETH_MAINNET_PRICE_FEED_ADDRESS;
-    address public constant WBTC_MAINNET_ADDRESS;
-    address public constant WBTC_MAINNET_PRICE_FEED_ADDRESS;
+    address public constant WETH_ARB_MAINNET_ADDRESS = address(0);
+    address public constant WETH_ARB_MAINNET_PRICE_FEED_ADDRESS = address(0);
+    address public constant WBTC_ARB_MAINNET_ADDRESS = address(0);
+    address public constant WBTC_ARB_MAINNET_PRICE_FEED_ADDRESS = address(0);
     // arb sepolia chain id and info
     uint256 public constant ARB_SEPOLIA_CHAIN_ID = 421_614;
-    address public constant WETH_SEPOLIA_ADDRESS;
-    address public constant WETH_SEPOLIA_PRICE_FEED_ADDRESS;
-    address public constant WBTC_SEPOLIA_ADDRESS;
-    address public constant WBTC_SEPOLIA_PRICE_FEED_ADDRESS;
-    
+    address public constant WETH_ARB_SEPOLIA_ADDRESS = address(0);
+    address public constant WETH_ARB_SEPOLIA_PRICE_FEED_ADDRESS = address(0);
+    address public constant WBTC_ARB_SEPOLIA_ADDRESS = address(0);
+    address public constant WBTC_ARB_SEPOLIA_PRICE_FEED_ADDRESS = address(0);
+
     // local chain id and info
     uint256 public constant LOCAL_CHAIN_ID = 31_337;
     // mock initialize info
@@ -58,30 +59,54 @@ contract HelperConfig is Script, CodeConstants {
 
     constructor() {
         if (block.chainid == ETH_MAINNET_CHAIN_ID) {
-            activeNetworkConfig = getMainnetEthConfig();
+            activeNetworkConfig = getEthMainnetConfig();
         } else if (block.chainid == ETH_SEPOLIA_CHAIN_ID) {
-            activeNetworkConfig = getSepoliaEthConfig();
+            activeNetworkConfig = getEthSepoliaConfig();
+        } else if (block.chainid == ARB_MAINNET_CHAIN_ID) {
+            activeNetworkConfig = getArbMainnetConfig();
+        } else if (block.chainid == ARB_SEPOLIA_CHAIN_ID) {
+            activeNetworkConfig = getArbSepoliaConfig();
         } else {
             activeNetworkConfig = getOrCreateAnvilEthConfig();
         }
     }
 
-    function getMainnetEthConfig() public view returns (NetworkConfig memory) {
+    function getEthMainnetConfig() public view returns (NetworkConfig memory) {
         return NetworkConfig({
-            ethUsdPriceFeed: WETH_MAINNET_PRICE_FEED_ADDRESS,
-            btcUsdPriceFeed: WBTC_MAINNET_PRICE_FEED_ADDRESS,
-            weth: WETH_MAINNET_ADDRESS,
-            wbtc: WBTC_MAINNET_ADDRESS,
+            ethUsdPriceFeed: WETH_ETH_MAINNET_PRICE_FEED_ADDRESS,
+            btcUsdPriceFeed: WBTC_ETH_MAINNET_PRICE_FEED_ADDRESS,
+            weth: WETH_ETH_MAINNET_ADDRESS,
+            wbtc: WBTC_ETH_MAINNET_ADDRESS,
             account: vm.envAddress("DEFAULT_KEY_ADDRESS")
         });
     }
 
-    function getSepoliaEthConfig() public view returns (NetworkConfig memory) {
+    function getEthSepoliaConfig() public view returns (NetworkConfig memory) {
         return NetworkConfig({
-            ethUsdPriceFeed: WETH_SEPOLIA_PRICE_FEED_ADDRESS,
-            btcUsdPriceFeed: WBTC_SEPOLIA_PRICE_FEED_ADDRESS,
-            weth: WETH_SEPOLIA_ADDRESS,
-            wbtc: WBTC_SEPOLIA_ADDRESS,
+            ethUsdPriceFeed: WETH_ETH_SEPOLIA_PRICE_FEED_ADDRESS,
+            btcUsdPriceFeed: WBTC_ETH_SEPOLIA_PRICE_FEED_ADDRESS,
+            weth: WETH_ETH_SEPOLIA_ADDRESS,
+            wbtc: WBTC_ETH_SEPOLIA_ADDRESS,
+            account: vm.envAddress("DEFAULT_KEY_ADDRESS")
+        });
+    }
+
+    function getArbMainnetConfig() public view returns (NetworkConfig memory) {
+        return NetworkConfig({
+            ethUsdPriceFeed: WETH_ARB_MAINNET_PRICE_FEED_ADDRESS,
+            btcUsdPriceFeed: WBTC_ARB_MAINNET_PRICE_FEED_ADDRESS,
+            weth: WETH_ARB_MAINNET_ADDRESS,
+            wbtc: WBTC_ARB_MAINNET_ADDRESS,
+            account: vm.envAddress("DEFAULT_KEY_ADDRESS")
+        });
+    }
+
+    function getArbSepoliaConfig() public view returns (NetworkConfig memory) {
+        return NetworkConfig({
+            ethUsdPriceFeed: WETH_ARB_SEPOLIA_PRICE_FEED_ADDRESS,
+            btcUsdPriceFeed: WBTC_ARB_SEPOLIA_PRICE_FEED_ADDRESS,
+            weth: WETH_ARB_SEPOLIA_ADDRESS,
+            wbtc: WBTC_ARB_SEPOLIA_ADDRESS,
             account: vm.envAddress("DEFAULT_KEY_ADDRESS")
         });
     }

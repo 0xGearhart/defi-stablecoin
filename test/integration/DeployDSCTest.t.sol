@@ -7,7 +7,7 @@ import {DSCEngine} from "../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {Test} from "forge-std/Test.sol";
 
-contract DecentralizedStableCoinTest is Test, CodeConstants {
+contract DeployDSCTest is Test, CodeConstants {
     DeployDSC public deployer;
     DSCEngine public dscEngine;
     HelperConfig public helperConfig;
@@ -22,6 +22,10 @@ contract DecentralizedStableCoinTest is Test, CodeConstants {
         deployer = new DeployDSC();
         (dsc, dscEngine, helperConfig) = deployer.run();
         (ethUsdPriceFeed, btcUsdPriceFeed, weth, wbtc, account) = helperConfig.activeNetworkConfig();
+    }
+
+    function testCorrectAccountWasUsed() public {
+        assertEq(account, DEFAULT_SENDER);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -59,7 +63,7 @@ contract DecentralizedStableCoinTest is Test, CodeConstants {
     }
 }
 
-contract DecentralizedStableCoinTest_ethMainnet is Test, CodeConstants {
+contract DeployDSCTest_ethMainnet is Test, CodeConstants {
     DeployDSC public deployer;
     DSCEngine public dscEngine;
     HelperConfig public helperConfig;
@@ -76,22 +80,28 @@ contract DecentralizedStableCoinTest_ethMainnet is Test, CodeConstants {
         (ethUsdPriceFeed, btcUsdPriceFeed, weth, wbtc, account) = helperConfig.activeNetworkConfig();
     }
 
+    function testCorrectAccountWasUsed() public {
+        assertEq(account, vm.envAddress("DEFAULT_KEY_ADDRESS"));
+    }
+
     /*//////////////////////////////////////////////////////////////
                        INITIAL DSC ENGINE STATE
     //////////////////////////////////////////////////////////////*/
 
     function testDscEngineEthUsdPriceFeedWasSetCorrectly() external view {
-        assert(dscEngine.getPriceFeedAddress(weth) != address(0));
+        assertEq(dscEngine.getPriceFeedAddress(weth), WETH_ETH_MAINNET_PRICE_FEED_ADDRESS);
+        assertEq(dscEngine.getPriceFeedAddress(WETH_ETH_MAINNET_ADDRESS), ethUsdPriceFeed);
         assertEq(dscEngine.getPriceFeedAddress(weth), ethUsdPriceFeed);
     }
 
     function testDscEngineBtcUsdPriceFeedWasSetCorrectly() external view {
-        assert(dscEngine.getPriceFeedAddress(wbtc) != address(0));
+        assertEq(dscEngine.getPriceFeedAddress(wbtc), WBTC_ETH_MAINNET_PRICE_FEED_ADDRESS);
+        assertEq(dscEngine.getPriceFeedAddress(WBTC_ETH_MAINNET_ADDRESS), btcUsdPriceFeed);
         assertEq(dscEngine.getPriceFeedAddress(wbtc), btcUsdPriceFeed);
     }
 }
 
-contract DecentralizedStableCoinTest_ethSepolia is Test, CodeConstants {
+contract DeployDSCTest_ethSepolia is Test, CodeConstants {
     DeployDSC public deployer;
     DSCEngine public dscEngine;
     HelperConfig public helperConfig;
@@ -108,22 +118,28 @@ contract DecentralizedStableCoinTest_ethSepolia is Test, CodeConstants {
         (ethUsdPriceFeed, btcUsdPriceFeed, weth, wbtc, account) = helperConfig.activeNetworkConfig();
     }
 
+    function testCorrectAccountWasUsed() public {
+        assertEq(account, vm.envAddress("DEFAULT_KEY_ADDRESS"));
+    }
+
     /*//////////////////////////////////////////////////////////////
                        INITIAL DSC ENGINE STATE
     //////////////////////////////////////////////////////////////*/
 
     function testDscEngineEthUsdPriceFeedWasSetCorrectly() external view {
-        assert(dscEngine.getPriceFeedAddress(weth) != address(0));
+        assertEq(dscEngine.getPriceFeedAddress(weth), WETH_ETH_SEPOLIA_PRICE_FEED_ADDRESS);
+        assertEq(dscEngine.getPriceFeedAddress(WETH_ETH_SEPOLIA_ADDRESS), ethUsdPriceFeed);
         assertEq(dscEngine.getPriceFeedAddress(weth), ethUsdPriceFeed);
     }
 
     function testDscEngineBtcUsdPriceFeedWasSetCorrectly() external view {
-        assert(dscEngine.getPriceFeedAddress(wbtc) != address(0));
+        assertEq(dscEngine.getPriceFeedAddress(wbtc), WBTC_ETH_SEPOLIA_PRICE_FEED_ADDRESS);
+        assertEq(dscEngine.getPriceFeedAddress(WBTC_ETH_SEPOLIA_ADDRESS), btcUsdPriceFeed);
         assertEq(dscEngine.getPriceFeedAddress(wbtc), btcUsdPriceFeed);
     }
 }
 
-contract DecentralizedStableCoinTest_arbMainnet is Test, CodeConstants {
+contract DeployDSCTest_arbMainnet is Test, CodeConstants {
     DeployDSC public deployer;
     DSCEngine public dscEngine;
     HelperConfig public helperConfig;
@@ -140,22 +156,28 @@ contract DecentralizedStableCoinTest_arbMainnet is Test, CodeConstants {
         (ethUsdPriceFeed, btcUsdPriceFeed, weth, wbtc, account) = helperConfig.activeNetworkConfig();
     }
 
+    function testCorrectAccountWasUsed() public {
+        assertEq(account, vm.envAddress("DEFAULT_KEY_ADDRESS"));
+    }
+
     /*//////////////////////////////////////////////////////////////
                        INITIAL DSC ENGINE STATE
     //////////////////////////////////////////////////////////////*/
 
     function testDscEngineEthUsdPriceFeedWasSetCorrectly() external view {
-        assert(dscEngine.getPriceFeedAddress(weth) != address(0));
+        assertEq(dscEngine.getPriceFeedAddress(weth), WETH_ARB_MAINNET_PRICE_FEED_ADDRESS);
+        assertEq(dscEngine.getPriceFeedAddress(WETH_ARB_MAINNET_ADDRESS), ethUsdPriceFeed);
         assertEq(dscEngine.getPriceFeedAddress(weth), ethUsdPriceFeed);
     }
 
     function testDscEngineBtcUsdPriceFeedWasSetCorrectly() external view {
-        assert(dscEngine.getPriceFeedAddress(wbtc) != address(0));
+        assertEq(dscEngine.getPriceFeedAddress(wbtc), WBTC_ARB_MAINNET_PRICE_FEED_ADDRESS);
+        assertEq(dscEngine.getPriceFeedAddress(WBTC_ARB_MAINNET_ADDRESS), btcUsdPriceFeed);
         assertEq(dscEngine.getPriceFeedAddress(wbtc), btcUsdPriceFeed);
     }
 }
 
-contract DecentralizedStableCoinTest_arbSepolia is Test, CodeConstants {
+contract DeployDSCTest_arbSepolia is Test, CodeConstants {
     DeployDSC public deployer;
     DSCEngine public dscEngine;
     HelperConfig public helperConfig;
@@ -172,17 +194,41 @@ contract DecentralizedStableCoinTest_arbSepolia is Test, CodeConstants {
         (ethUsdPriceFeed, btcUsdPriceFeed, weth, wbtc, account) = helperConfig.activeNetworkConfig();
     }
 
+    function testCorrectAccountWasUsed() public {
+        assertEq(account, vm.envAddress("DEFAULT_KEY_ADDRESS"));
+    }
+
     /*//////////////////////////////////////////////////////////////
                        INITIAL DSC ENGINE STATE
     //////////////////////////////////////////////////////////////*/
 
     function testDscEngineEthUsdPriceFeedWasSetCorrectly() external view {
-        assert(dscEngine.getPriceFeedAddress(weth) != address(0));
+        assertEq(dscEngine.getPriceFeedAddress(weth), WETH_ARB_SEPOLIA_PRICE_FEED_ADDRESS);
+        assertEq(dscEngine.getPriceFeedAddress(WETH_ARB_SEPOLIA_ADDRESS), ethUsdPriceFeed);
         assertEq(dscEngine.getPriceFeedAddress(weth), ethUsdPriceFeed);
     }
 
     function testDscEngineBtcUsdPriceFeedWasSetCorrectly() external view {
-        assert(dscEngine.getPriceFeedAddress(wbtc) != address(0));
+        assertEq(dscEngine.getPriceFeedAddress(wbtc), WBTC_ARB_SEPOLIA_PRICE_FEED_ADDRESS);
+        assertEq(dscEngine.getPriceFeedAddress(WBTC_ARB_SEPOLIA_ADDRESS), btcUsdPriceFeed);
         assertEq(dscEngine.getPriceFeedAddress(wbtc), btcUsdPriceFeed);
+    }
+}
+
+contract DeployDSCTest_unsupportedChain is Test, CodeConstants {
+    DeployDSC public deployer;
+    DSCEngine public dscEngine;
+    HelperConfig public helperConfig;
+    address public ethUsdPriceFeed;
+    address public btcUsdPriceFeed;
+    address public weth;
+    address public wbtc;
+    address public account;
+
+    function testDeploymentFailsForUnsupportedChain() external {
+        vm.createSelectFork(vm.envString("LINEA_SEPOLIA_RPC_URL"));
+        deployer = new DeployDSC();
+        vm.expectRevert(HelperConfig.HelperConfig__InvalidChainId.selector);
+        (, dscEngine, helperConfig) = deployer.run();
     }
 }

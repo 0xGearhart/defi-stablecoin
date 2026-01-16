@@ -25,7 +25,8 @@ build:; forge build
 test :; forge test 
 
 # Create test coverage report and save to .txt file
-coverage-report :; forge coverage --report debug > coverage.txt
+# Use "coverage" foundry profile to prevent crashes due to excessive fuzz and invariant runs
+coverage-report :; FOUNDRY_PROFILE=coverage forge coverage --report debug > coverage.txt
 
 # Generate Gas Snapshot
 snapshot :; forge snapshot

@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity 0.8.25;
 
 import {DeployDSC} from "../../script/DeployDSC.s.sol";
 import {CodeConstants, HelperConfig} from "../../script/HelperConfig.s.sol";
 import {DSCEngine, OracleLib} from "../../src/DSCEngine.sol";
-import {DecentralizedStableCoin, ERC20Burnable, Ownable} from "../../src/DecentralizedStableCoin.sol";
+import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {MockV3Aggregator} from "../mocks/MockV3Aggregator.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Test, console} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 
 contract DSCEngineTest is Test, CodeConstants {
     /*//////////////////////////////////////////////////////////////

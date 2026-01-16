@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.19;
+pragma solidity 0.8.25;
 
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {OracleLib} from "./libraries/OracleLib.sol";

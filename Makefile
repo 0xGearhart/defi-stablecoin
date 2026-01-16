@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: all clean remove install update test snapshot coverage-report gas-report anvil deploy
+.PHONY: all clean remove install update build test snapshot coverage-report gas-report anvil deploy
 
 DEFAULT_ANVIL_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
@@ -13,16 +13,20 @@ clean  :; forge clean
 remove :; rm -rf .gitmodules && rm -rf .git/modules/* && rm -rf lib && touch .gitmodules && git add . && git commit -m "modules"
 
 # Install dependencies
-install :; forge install cyfrin/foundry-devops@0.2.2 && forge install foundry-rs/forge-std@v1.11.0 && forge install openzeppelin/openzeppelin-contracts@v5.5.0 && forge install smartcontractkit/chainlink-brownie-contracts@1.3.0
+install :; forge install cyfrin/foundry-devops@0.4.0 && forge install foundry-rs/forge-std@v1.13.0 && forge install openzeppelin/openzeppelin-contracts@v5.5.0 && forge install smartcontractkit/chainlink-brownie-contracts@1.3.0
 
 # Update Dependencies
 update:; forge update
 
-# run test suite
+# Build contracts
+build:; forge build
+
+# Run test suite
 test :; forge test 
 
 # Create test coverage report and save to .txt file
-coverage-report :; forge coverage --report debug > coverage.txt
+# Use "coverage" foundry profile to prevent crashes due to excessive fuzz and invariant runs
+coverage-report :; FOUNDRY_PROFILE=coverage forge coverage --report debug > coverage.txt
 
 # Generate Gas Snapshot
 snapshot :; forge snapshot

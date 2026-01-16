@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.33;
 
 import {AggregatorV3Interface, DSCEngine} from "../../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../../src/DecentralizedStableCoin.sol";
 import {MockV3Aggregator} from "../../mocks/MockV3Aggregator.sol";
 import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {Test, console} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 
 contract Handler is Test {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -105,6 +105,7 @@ contract Handler is Test {
         timesRedeemCalled++;
     }
 
+    // ToDo: remove all this unused code if not necessary
     // function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral, uint256 addressSeed) public {
     //     // pick random address that has deposited
     //     address sender = _getDepositedAddressFromSeed(addressSeed);

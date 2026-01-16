@@ -4,7 +4,7 @@
 // 1. The total amount of DSC should always be less than the total value of collateral
 // 2. Getter functions should never revert
 
-pragma solidity ^0.8.19;
+pragma solidity 0.8.25;
 
 import {DeployDSC} from "../../../script/DeployDSC.s.sol";
 import {CodeConstants, HelperConfig} from "../../../script/HelperConfig.s.sol";

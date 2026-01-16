@@ -3,8 +3,11 @@
 // what are the invariants?
 // 1. The total amount of DSC should always be less than the total value of collateral
 // 2. Getter functions should never revert
+// 3. Users should never be able to withdraw more than the deposited (excluding liquidation bonuses)
+// 4. Users with broken health factors should be liquidate-able
+// 5. Users with good health factors should never be liquidated
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.33;
 
 import {DeployDSC} from "../../../script/DeployDSC.s.sol";
 import {CodeConstants, HelperConfig} from "../../../script/HelperConfig.s.sol";
@@ -12,7 +15,7 @@ import {DSCEngine} from "../../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../../src/DecentralizedStableCoin.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {StdInvariant} from "forge-std/StdInvariant.sol";
-import {Test, console} from "forge-std/Test.sol";
+import {Test, console2} from "forge-std/Test.sol";
 
 contract OpenInvariantTest is StdInvariant, Test {
     // DeployDSC deployer;
@@ -38,6 +41,8 @@ contract OpenInvariantTest is StdInvariant, Test {
     //     uint256 totalDscSupply = dsc.totalSupply();
     //     assert(totalDepositedValue >= totalDscSupply);
     // }
+    // // ToDo: need an open invariant test to always fail when attempting to liquidate healthy accounts
+    // function invariant_healthyAccountsCanNotBeLiquidated() public view {}
 
     }
 

@@ -21,7 +21,7 @@ update:; forge update
 # Build contracts
 build:; forge build
 
-# run test suite
+# Run test suite
 test :; forge test 
 
 # Create test coverage report and save to .txt file

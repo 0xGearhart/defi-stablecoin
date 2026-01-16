@@ -38,4 +38,11 @@ depth = 128
 # true is great when using handlers that result in valid calls during tests. Better for complex systems
 fail_on_revert = true
 
+# profile settings to lower amount of fuzz and invariant runs when creating coverage reports
+# this prevents crashing that happens when using default profile above
+[profile.coverage]
+fuzz.runs = 10
+invariant.runs = 10
+invariant.depth = 10
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

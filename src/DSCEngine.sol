@@ -344,9 +344,8 @@ contract DSCEngine is ReentrancyGuard {
         // Example 2
         // $1000 ETH / 100 DSC
         // 1000 * 50 = 50000 / 100 = (500 / 100) > 1 == good health factor, large margin before liquidation
-        uint256 collateralAdjustedForThreshold =
-            ((collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION) * PRECISION;
-        return collateralAdjustedForThreshold / totalDscMinted;
+        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
     }
 
     /*//////////////////////////////////////////////////////////////

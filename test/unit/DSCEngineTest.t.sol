@@ -179,6 +179,28 @@ contract DSCEngineTest is Test, CodeConstants {
         new DSCEngine(invalidTokenAddresses, invalidPriceFeedAddresses, address(dsc));
     }
 
+    function testDscEngineConstructorRevertsWhenATokenAddressIsZero() external {
+        address[] memory tokenAddresses = new address[](2);
+        tokenAddresses[0] = address(weth);
+        tokenAddresses[1] = address(0);
+        address[] memory priceFeedAddresses = new address[](2);
+        priceFeedAddresses[0] = ethUsdPriceFeed;
+        priceFeedAddresses[1] = btcUsdPriceFeed;
+        vm.expectRevert(DSCEngine.DSCEngine__InvalidPriceFeedOrTokenAddress.selector);
+        new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+    }
+
+    function testDscEngineConstructorRevertsWhenAPriceFeedAddressIsZero() external {
+        address[] memory tokenAddresses = new address[](2);
+        tokenAddresses[0] = address(weth);
+        tokenAddresses[1] = address(wbtc);
+        address[] memory priceFeedAddresses = new address[](2);
+        priceFeedAddresses[0] = ethUsdPriceFeed;
+        priceFeedAddresses[1] = address(0);
+        vm.expectRevert(DSCEngine.DSCEngine__InvalidPriceFeedOrTokenAddress.selector);
+        new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+    }
+
     /*//////////////////////////////////////////////////////////////
                            DEPOSIT COLLATERAL
     //////////////////////////////////////////////////////////////*/

@@ -179,6 +179,28 @@ contract DSCEngineTest is Test, CodeConstants {
         new DSCEngine(invalidTokenAddresses, invalidPriceFeedAddresses, address(dsc));
     }
 
+    function testDscEngineConstructorRevertsWhenATokenAddressIsZero() external {
+        address[] memory tokenAddresses = new address[](2);
+        tokenAddresses[0] = address(weth);
+        tokenAddresses[1] = address(0);
+        address[] memory priceFeedAddresses = new address[](2);
+        priceFeedAddresses[0] = ethUsdPriceFeed;
+        priceFeedAddresses[1] = btcUsdPriceFeed;
+        vm.expectRevert(DSCEngine.DSCEngine__InvalidPriceFeedOrTokenAddress.selector);
+        new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+    }
+
+    function testDscEngineConstructorRevertsWhenAPriceFeedAddressIsZero() external {
+        address[] memory tokenAddresses = new address[](2);
+        tokenAddresses[0] = address(weth);
+        tokenAddresses[1] = address(wbtc);
+        address[] memory priceFeedAddresses = new address[](2);
+        priceFeedAddresses[0] = ethUsdPriceFeed;
+        priceFeedAddresses[1] = address(0);
+        vm.expectRevert(DSCEngine.DSCEngine__InvalidPriceFeedOrTokenAddress.selector);
+        new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+    }
+
     /*//////////////////////////////////////////////////////////////
                            DEPOSIT COLLATERAL
     //////////////////////////////////////////////////////////////*/
@@ -281,8 +303,8 @@ contract DSCEngineTest is Test, CodeConstants {
     function testMintDscFailsIfUserHasInsufficientCollateralDeposited() external usersFunded usersDeposited {
         (, uint256 currentCollateralValueUsd) = dscEngine.getAccountInformation(user1);
         uint256 collateralAdjustedForThreshold =
-            ((currentCollateralValueUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION) * PRECISION;
-        uint256 expectedHealthFactor = collateralAdjustedForThreshold / INVALID_DSC_MINT_AMOUNT;
+            (currentCollateralValueUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        uint256 expectedHealthFactor = (collateralAdjustedForThreshold * PRECISION) / INVALID_DSC_MINT_AMOUNT;
         vm.prank(user1);
         vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, expectedHealthFactor));
         dscEngine.mintDsc(INVALID_DSC_MINT_AMOUNT);
@@ -656,9 +678,8 @@ contract DSCEngineTest is Test, CodeConstants {
         // when collateral deposited > 0 and dsc minted > 0
         // straightforward calculation
         (uint256 dscMinted, uint256 collateralValueInUsd) = dscEngine.getAccountInformation(user1);
-        uint256 collateralAdjustedForThreshold =
-            ((collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION) * PRECISION;
-        assertEq(dscEngine.getHealthFactor(user1), collateralAdjustedForThreshold / dscMinted);
+        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        assertEq(dscEngine.getHealthFactor(user1), (collateralAdjustedForThreshold * PRECISION) / dscMinted);
     }
 
     function testGetHealthFactorEstimate() external usersFunded usersDeposited usersMinted {

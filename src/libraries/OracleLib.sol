@@ -18,7 +18,7 @@ library OracleLib {
     uint256 private constant TIMEOUT = 3 hours; // 3 * 60 * 60 = 10800 seconds
 
     function stalePriceFeedCheckLatestRoundData(AggregatorV3Interface priceFeed)
-        public
+        external
         view
         returns (uint80, int256, uint256, uint256, uint80)
     {

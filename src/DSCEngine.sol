@@ -40,7 +40,6 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
     error DSCEngine__TransferFailed();
     error DSCEngine__MintFailed();
-    error DSCEngine__BurnFailed();
     error DSCEngine__UserNotEligibleForLiquidation();
     error DSCEngine__HealthFactorNotImproved();
     error DSCEngine__InvalidPriceFeedOrTokenAddress();
@@ -161,8 +160,8 @@ contract DSCEngine is ReentrancyGuard {
         uint256 debtToCover
     )
         external
-        moreThanZero(debtToCover)
         nonReentrant
+        moreThanZero(debtToCover)
     {
         // verify user has broken health factor
         uint256 startingUserHealthFactor = _healthFactor(userToBeLiquidated);
@@ -195,9 +194,9 @@ contract DSCEngine is ReentrancyGuard {
         uint256 amountCollateral
     )
         public
+        nonReentrant
         moreThanZero(amountCollateral)
         onlyApprovedTokens(collateralTokenAddress)
-        nonReentrant
     {
         s_collateralDeposited[msg.sender][collateralTokenAddress] += amountCollateral;
         emit CollateralDeposited(msg.sender, collateralTokenAddress, amountCollateral);
@@ -217,8 +216,8 @@ contract DSCEngine is ReentrancyGuard {
         uint256 amountCollateral
     )
         public
-        moreThanZero(amountCollateral)
         nonReentrant
+        moreThanZero(amountCollateral)
     {
         _redeemCollateral(msg.sender, msg.sender, collateralTokenAddress, amountCollateral);
         _revertIfHealthFactorIsBroken(msg.sender);
@@ -229,7 +228,7 @@ contract DSCEngine is ReentrancyGuard {
      * @notice Users must have more collateral value deposited than the minimum threshold determined by their health factor
      * @param amountDscToMint The amount of decentralized stable coin to mint
      */
-    function mintDsc(uint256 amountDscToMint) public moreThanZero(amountDscToMint) nonReentrant {
+    function mintDsc(uint256 amountDscToMint) public nonReentrant moreThanZero(amountDscToMint) {
         s_dscMinted[msg.sender] += amountDscToMint;
         _revertIfHealthFactorIsBroken(msg.sender);
         bool minted = i_dsc.mint(msg.sender, amountDscToMint);
@@ -242,7 +241,7 @@ contract DSCEngine is ReentrancyGuard {
      * @notice Burn DSC to redeem collateral or improve health factor
      * @param amountDscToBurn The amount of DSC to be burned
      */
-    function burnDsc(uint256 amountDscToBurn) public moreThanZero(amountDscToBurn) nonReentrant {
+    function burnDsc(uint256 amountDscToBurn) public nonReentrant moreThanZero(amountDscToBurn) {
         _burnDsc(amountDscToBurn, msg.sender, msg.sender);
         _revertIfHealthFactorIsBroken(msg.sender); // don't think this will ever get hit
     }
@@ -344,9 +343,8 @@ contract DSCEngine is ReentrancyGuard {
         // Example 2
         // $1000 ETH / 100 DSC
         // 1000 * 50 = 50000 / 100 = (500 / 100) > 1 == good health factor, large margin before liquidation
-        uint256 collateralAdjustedForThreshold =
-            ((collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION) * PRECISION;
-        return collateralAdjustedForThreshold / totalDscMinted;
+        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
     }
 
     /*//////////////////////////////////////////////////////////////

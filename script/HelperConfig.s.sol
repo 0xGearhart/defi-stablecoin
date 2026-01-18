@@ -115,10 +115,6 @@ contract HelperConfig is Script, CodeConstants {
     }
 
     function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
-        // Check to see if we set an active network config
-        if (activeNetworkConfig.ethUsdPriceFeed != address(0)) {
-            return activeNetworkConfig;
-        }
         // deploy and initialize mocks
         vm.startBroadcast();
         // create mock weth and weth price feed

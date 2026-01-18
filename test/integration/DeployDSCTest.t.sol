@@ -24,7 +24,7 @@ contract DeployDSCTest is Test, CodeConstants {
         (ethUsdPriceFeed, btcUsdPriceFeed, weth, wbtc, account) = helperConfig.activeNetworkConfig();
     }
 
-    function testCorrectAccountWasUsed() public {
+    function testCorrectAccountWasUsed() public view {
         assertEq(account, DEFAULT_SENDER);
     }
 
@@ -80,7 +80,7 @@ contract DeployDSCTest_ethMainnet is Test, CodeConstants {
         (ethUsdPriceFeed, btcUsdPriceFeed, weth, wbtc, account) = helperConfig.activeNetworkConfig();
     }
 
-    function testCorrectAccountWasUsed() public {
+    function testCorrectAccountWasUsed() public view {
         assertEq(account, vm.envAddress("DEFAULT_KEY_ADDRESS"));
     }
 
@@ -118,7 +118,7 @@ contract DeployDSCTest_ethSepolia is Test, CodeConstants {
         (ethUsdPriceFeed, btcUsdPriceFeed, weth, wbtc, account) = helperConfig.activeNetworkConfig();
     }
 
-    function testCorrectAccountWasUsed() public {
+    function testCorrectAccountWasUsed() public view {
         assertEq(account, vm.envAddress("DEFAULT_KEY_ADDRESS"));
     }
 
@@ -156,7 +156,7 @@ contract DeployDSCTest_arbMainnet is Test, CodeConstants {
         (ethUsdPriceFeed, btcUsdPriceFeed, weth, wbtc, account) = helperConfig.activeNetworkConfig();
     }
 
-    function testCorrectAccountWasUsed() public {
+    function testCorrectAccountWasUsed() public view {
         assertEq(account, vm.envAddress("DEFAULT_KEY_ADDRESS"));
     }
 
@@ -194,7 +194,7 @@ contract DeployDSCTest_arbSepolia is Test, CodeConstants {
         (ethUsdPriceFeed, btcUsdPriceFeed, weth, wbtc, account) = helperConfig.activeNetworkConfig();
     }
 
-    function testCorrectAccountWasUsed() public {
+    function testCorrectAccountWasUsed() public view {
         assertEq(account, vm.envAddress("DEFAULT_KEY_ADDRESS"));
     }
 

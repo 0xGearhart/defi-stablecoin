@@ -8,6 +8,7 @@
   - [Table of Contents](#table-of-contents)
   - [About](#about)
     - [Key Features](#key-features)
+    - [How It Works](#how-it-works)
     - [Architecture](#architecture)
   - [Getting Started](#getting-started)
     - [Requirements](#requirements)
@@ -18,12 +19,12 @@
     - [Testing](#testing)
     - [Test Coverage](#test-coverage)
     - [Deploy Locally](#deploy-locally)
-    - [Interact with Contract](#interact-with-contract)
-  - [Deployment](#deployment)
     - [Deploy to Testnet](#deploy-to-testnet)
     - [Verify Contract](#verify-contract)
-    - [Deployment Addresses](#deployment-addresses)
+    - [Interact with Contract](#interact-with-contract)
+    - [Deployed Contract Addresses](#deployed-contract-addresses)
   - [Security](#security)
+    - [Access Control](#access-control)
     - [Audit Status](#audit-status)
     - [Known Limitations](#known-limitations)
   - [Gas Optimization](#gas-optimization)
@@ -32,22 +33,46 @@
 
 ## About
 
-The Decentralized Stablecoin (DSC) is a collateral-backed stablecoin system that maintains a 1:1 USD peg through algorithmic minting and burning mechanisms. The system is overcollateralized using wETH and wBTC, leveraging Chainlink price feeds for secure oracle-based valuations.
+**DSC (Decentralized Stablecoin)** is an algorithmic stablecoin protocol inspired by MakerDAO's DAI. Users deposit wETH or wBTC collateral to mint DSC tokens pegged 1:1 to USD. The system maintains peg stability through overcollateralization (>150% ratio) and permissionless liquidation mechanisms.
 
 ### Key Features
 
 - **Decentralized Stablecoin (DSC)**: ERC20 token pegged to USD
+- **Exogenous Collateral**: Users must deposit real assets (wETH or wBTC) to mint DSC
 - **Overcollateralized System**: Requires >150% collateral ratio to maintain peg stability
-- **Dual Collateral Support**: Accepts wETH and wBTC as collateral
-- **Oracle-Driven**: Uses Chainlink V3 price feeds for real-time price data
-- **Liquidation Mechanism**: Allows liquidators to restore health factor when users become undercollateralized
+- **Permissionless**: Deposit, mint, redeem, and liquidate without permission
+- **Oracle-Driven**: Uses Chainlink V3 price feeds for real-time price data with staleness detection
+- **Liquidation Mechanism**: Allows liquidators to restore health factor when users health factor falls below threshold
 - **Comprehensive Testing**: Includes unit tests, integration tests, and advanced invariant testing with fuzz handlers
 
 **Tech Stack:**
-- Solidity ^0.8.19
-- Foundry (Forge + Anvil)
-- OpenZeppelin Contracts
-- Chainlink Price Feeds
+- Solidity 0.8.33
+- Foundry (Forge + Anvil) with forge-std v1.13.0
+- OpenZeppelin Contracts v5.5.0
+- Chainlink Price Feeds (chainlink-brownie-contracts 1.3.0)
+- Foundry Development and Operations (foundry-devops 0.4.0)
+
+### How It Works
+
+1. **Deposit & Mint**: Approve collateral → Deposit wETH/wBTC → Mint DSC
+2. **Redeem & Burn**: Burn DSC → Withdraw collateral (health factor must stay ≥ 1.0)
+3. **Liquidation**: If health factor < 1.0, anyone can liquidate and earn 10% bonus
+
+**Health Factor Calculation:**
+```
+healthFactor = (collateralValueInUsd * LIQUIDATION_THRESHOLD / 100) * 1e18 / totalDscMinted
+```
+- Health Factor < 1.0 → User can be liquidated
+- Health Factor = 1.0 → Minimum safe threshold
+- Health Factor > 1.0 → Safe; higher values indicate more buffer
+
+**Liquidation Process:**
+1. Liquidator calls `liquidate(userAddress, collateralToken, debtAmount)`
+2. System verifies user has broken health factor (< 1.0)
+3. Liquidator provides DSC to pay off part of user's debt
+4. User's collateral (+ 10% bonus) is transferred to liquidator
+5. User's health factor must improve after liquidation
+6. Liquidator's own health factor must not break after receiving collateral
 
 ### Architecture
 
@@ -96,34 +121,35 @@ The Decentralized Stablecoin (DSC) is a collateral-backed stablecoin system that
 ```
 foundry-defi-stablecoin/
 ├── src/
-│   ├── DSCEngine.sol                  # Core protocol engine
-│   ├── DecentralizedStableCoin.sol    # ERC20 stablecoin token
+│   ├── DSCEngine.sol                     # Core protocol engine
+│   ├── DecentralizedStableCoin.sol       # ERC20 stablecoin token
 │   └── libraries/
-│       └── OracleLib.sol              # Price feed validation & safety
+│       └── OracleLib.sol                 # Price feed validation & safety
 ├── script/
-│   ├── DeployDSC.s.sol               # Main deployment script
-│   └── HelperConfig.s.sol            # Network configuration helper
+│   ├── DeployDSC.s.sol                  # Main deployment script
+│   └── HelperConfig.s.sol               # Network configuration helper
 ├── test/
 │   ├── unit/
-│   │   ├── DSCEngineTest.t.sol        # Unit tests for DSCEngine
+│   │   ├── DSCEngineTest.t.sol           # DSCEngine unit tests
 │   │   └── DecentralizedStableCoinTest.t.sol  # Token unit tests
 │   ├── integration/
-│   │   └── DeployDSCTest.t.sol        # Deployment integration tests
+│   │   └── DeployDSCTest.t.sol           # Deployment integration tests
 │   ├── mocks/
-│   │   └── MockV3Aggregator.sol       # Mock Chainlink price feed
+│   │   └── MockV3Aggregator.sol          # Mock Chainlink price feed
 │   └── fuzz/
 │       ├── failOnRevert/
-│       │   ├── Handler.t.sol          # Fuzz action handler
-│       │   └── InvariantsTest.t.sol   # Invariant tests (fail on revert)
+│       │   ├── Handler.t.sol             # Fuzz action handler
+│       │   └── InvariantsTest.t.sol      # Invariant tests (fail on revert)
 │       └── continueOnRevert/
 │           └── OpenInvariantsTest.t.sol  # Invariant tests (continue on revert)
 ├── lib/
-│   ├── forge-std/                     # Foundry standard library
-│   ├── openzeppelin-contracts/        # OpenZeppelin ERC20 & utilities
-│   └── chainlink-brownie-contracts/   # Chainlink price feed interfaces
-├── foundry.toml                       # Foundry configuration
-├── Makefile                           # Build & test commands
-└── README.md                          # This file
+│   ├── forge-std/                        # Foundry standard library
+│   ├── openzeppelin-contracts/           # OpenZeppelin utilities
+│   ├── foundry-devops/                   # Foundry dev utilities
+│   └── chainlink-brownie-contracts/      # Chainlink price feed interfaces
+├── foundry.toml                          # Foundry configuration
+├── Makefile                              # Build & test commands
+└── README.md                             # This file
 ```
 
 ## Getting Started
@@ -153,8 +179,10 @@ forge build
 
 2. **Configure your `.env` file:**
    ```bash
-   SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your-api-key
-   MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/your-api-key
+   ETH_SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your-api-key
+   ETH_MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/your-api-key
+   ARB_SEPOLIA_RPC_URL=https://arb-sepolia.g.alchemy.com/v2/your-api-key
+   ARB_MAINNET_RPC_URL=https://arb-mainnet.g.alchemy.com/v2/your-api-key
    ETHERSCAN_API_KEY=your_etherscan_api_key_here
    DEFAULT_KEY_ADDRESS=public_address_of_your_encrypted_private_key_here
    ```
@@ -213,11 +241,16 @@ forge test --match-test testFunctionName
 ```
 
 ### Test Coverage
+Check test coverage
+
+```bash
+forge coverage
+```
 
 Generate coverage report:
 
 ```bash
-forge coverage
+make coverage-report
 ```
 
 ### Deploy Locally
@@ -231,7 +264,41 @@ make anvil
 Deploy to local node (in another terminal):
 
 ```bash
-make deployDSC
+make deploy
+```
+
+### Deploy to Testnet
+
+Deploy to Ethereum Sepolia:
+
+```bash
+make deploy ARGS="--network eth sepolia"
+```
+
+Deploy to Arbitrum Sepolia:
+
+```bash
+make deploy ARGS="--network arb sepolia"
+```
+
+Or using forge directly:
+
+```bash
+forge script script/DeployDSC.s.sol:DeployDSC --rpc-url $ETH_SEPOLIA_RPC_URL --account defaultKey --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY -vvvv
+```
+
+### Verify Contract
+
+If automatic verification fails, verify DSCEngine:
+
+```bash
+forge verify-contract <DSC_ENGINE_ADDRESS> src/DSCEngine.sol:DSCEngine --chain-id 11155111 --etherscan-api-key $ETHERSCAN_API_KEY
+```
+
+Or verify DecentralizedStableCoin:
+
+```bash
+forge verify-contract <DSC_TOKEN_ADDRESS> src/DecentralizedStableCoin.sol:DecentralizedStableCoin --chain-id 11155111 --etherscan-api-key $ETHERSCAN_API_KEY
 ```
 
 ### Interact with Contract
@@ -240,55 +307,40 @@ Once deployed, you can interact with the DSC system using cast:
 
 ```bash
 # Approve collateral spending
-cast send <COLLATERAL_ADDRESS> "approve(address,uint256)" <DSC_ENGINE_ADDRESS> <AMOUNT> --rpc-url $SEPOLIA_RPC_URL --account defaultKey
+cast send <COLLATERAL_ADDRESS> "approve(address,uint256)" <DSC_ENGINE_ADDRESS> <AMOUNT> --rpc-url $ETH_SEPOLIA_RPC_URL --account defaultKey
 
 # Deposit collateral (wETH example)
-cast send <DSC_ENGINE_ADDRESS> "depositCollateral(address,uint256)" <WETH_ADDRESS> <AMOUNT> --rpc-url $SEPOLIA_RPC_URL --account defaultKey
+cast send <DSC_ENGINE_ADDRESS> "depositCollateral(address,uint256)" <WETH_ADDRESS> <AMOUNT> --rpc-url $ETH_SEPOLIA_RPC_URL --account defaultKey
 
 # Mint DSC
-cast send <DSC_ENGINE_ADDRESS> "mintDsc(uint256)" <DSC_AMOUNT> --rpc-url $SEPOLIA_RPC_URL --private-key $PRIVATE_KEY
+cast send <DSC_ENGINE_ADDRESS> "mintDsc(uint256)" <DSC_AMOUNT> --rpc-url $ETH_SEPOLIA_RPC_URL --account defaultKey
 
 # Check health factor
-cast call <DSC_ENGINE_ADDRESS> "getHealthFactor(address)" <YOUR_ADDRESS> --rpc-url $SEPOLIA_RPC_URL
+cast call <DSC_ENGINE_ADDRESS> "getHealthFactor(address)" <YOUR_ADDRESS> --rpc-url $ETH_SEPOLIA_RPC_URL
 
 # Get collateral value
-cast call <DSC_ENGINE_ADDRESS> "getCollateralValueInUsd(address,address)" <USER_ADDRESS> <COLLATERAL_ADDRESS> --rpc-url $SEPOLIA_RPC_URL
+cast call <DSC_ENGINE_ADDRESS> "getCollateralValueInUsd(address,address)" <USER_ADDRESS> <COLLATERAL_ADDRESS> --rpc-url $ETH_SEPOLIA_RPC_URL
 ```
 
-## Deployment
+### Deployed Contract Addresses
 
-### Deploy to Testnet
-
-Deploy to Sepolia:
-
-```bash
-make deployDSC ARGS="--network sepolia"
-```
-
-Or using forge directly:
-
-```bash
-forge script script/DeployContract.s.sol:DeployContract --rpc-url $SEPOLIA_RPC_URL --account defaultKey --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY -vvvv
-```
-
-### Verify Contract
-
-If automatic verification fails:
-
-```bash
-forge verify-contract <CONTRACT_ADDRESS> src/MainContract.sol:MainContract --chain-id 11155111 --etherscan-api-key $ETHERSCAN_API_KEY
-```
-
-### Deployment Addresses
-
-| Network | Contract                | Address | Explorer                                          |
-| ------- | ----------------------- | ------- | ------------------------------------------------- |
-| Sepolia | DSCEngine               | `TBD`   | [View on Etherscan](https://sepolia.etherscan.io) |
-| Sepolia | DecentralizedStableCoin | `TBD`   | [View on Etherscan](https://sepolia.etherscan.io) |
-| Mainnet | DSCEngine               | `TBD`   | [View on Etherscan](https://etherscan.io)         |
-| Mainnet | DecentralizedStableCoin | `TBD`   | [View on Etherscan](https://etherscan.io)         |
+| Network     | Contract                | Address                                      | Explorer                                          |
+| ----------- | ----------------------- | -------------------------------------------- | ------------------------------------------------- |
+| Arb Sepolia | DSCEngine               | `0xd560D60d441A2351a093Ab200CD967723b8b2e15` | [View on Arbiscan](https://sepolia.arbiscan.io)   |
+| Arb Sepolia | DecentralizedStableCoin | `0x6b755b42725F6239aa09Baa7fb971Ef92344b6D9` | [View on Arbiscan](https://sepolia.arbiscan.io)   |
+| Eth Sepolia | DSCEngine               | `TBD`                                        | [View on Etherscan](https://sepolia.etherscan.io) |
+| Eth Sepolia | DecentralizedStableCoin | `TBD`                                        | [View on Etherscan](https://sepolia.etherscan.io) |
 
 ## Security
+
+### Access Control
+
+**DecentralizedStableCoin (DSC Token):**
+- **Owner**: Deployer (set during initialization)
+  - The DSCEngine is designed to be decentralized. The DSC token's owner role is intended to be held by the DSCEngine contract itself post-deployment to prevent arbitrary minting.
+
+**DSCEngine (Protocol Logic):**
+- **No Role-Based Access Control**: All functions are public/external with no role restrictions
 
 ### Audit Status
 
@@ -317,6 +369,8 @@ For production use, consider:
 - If both ETH and BTC price feeds fail, system cannot mint new DSC
 
 ## Gas Optimization
+
+**Approximate gas costs on local anvil chain (may vary by network and gas conditions):**
 
 | Function                      | Gas Cost |
 | ----------------------------- | -------- |

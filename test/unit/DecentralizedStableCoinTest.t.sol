@@ -92,4 +92,13 @@ contract DecentralizedStableCoinTest is Test, CodeConstants {
         dsc.burn(amount);
         assertEq(dsc.balanceOf(owner), 0);
     }
+
+    function testBurnFromAlwaysFails() external minted {
+        uint256 amount = 1000;
+        assertEq(dsc.balanceOf(owner), amount);
+        vm.expectRevert(DecentralizedStableCoin.DecentralizedStableCoin__CanOnlyBurnDSCThroughDSCEngine.selector);
+        vm.prank(owner);
+        dsc.burnFrom(owner, amount);
+        assertEq(dsc.balanceOf(owner), amount);
+    }
 }

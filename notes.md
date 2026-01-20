@@ -2,6 +2,7 @@
 
 - Need to fill out invariant test suite and work on open invariants as well
 
+- add events for all state changing functions
 - stale price check timeout should be changed depending on what chain protocol is deployed to
 - need to check sequencer status when checking price staleness on Arbitrum
 - need to check Chainlink circuit breaker status during price checks in case of severe price dislocation, something like:

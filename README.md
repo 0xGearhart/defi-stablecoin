@@ -240,7 +240,7 @@ forge test --match-test testFunctionName
 ```
 
 ### Test Coverage
-Check test coverage
+Check test coverage:
 
 ```bash
 forge coverage

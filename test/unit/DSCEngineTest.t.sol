@@ -538,6 +538,48 @@ contract DSCEngineTest is Test, CodeConstants {
     //     dscEngine.liquidate(user2, wethAddress, DSC_MINT_AMOUNT);
     // }
 
+    // this might not be possible to hit since having 0 DSC minted means they do not have a broken health factor and that check fails first
+    function testLiquidateWithUint256MaxFailsIfUserToBeLiquidatedHasZeroDscMinted()
+        external
+        skipFork
+        usersFunded
+        usersDeposited
+        usersMinted
+        user3CanBeLiquidated
+    {}
+
+    function testLiquidateWithUint256MaxLiquidatesTheMaximumAmount()
+        external
+        skipFork
+        usersFunded
+        usersDeposited
+        usersMinted
+        user3CanBeLiquidated
+    {
+        weth.mint(user1, STARTING_ERC20_BALANCE);
+        (uint256 user3DscMintedInitial,) = dscEngine.getAccountInformation(user3);
+        uint256 additionalAmountNeeded = user3DscMintedInitial - dsc.balanceOf(user1);
+        vm.startPrank(user1);
+        weth.approve(address(dscEngine), COLLATERAL_AMOUNT);
+        dscEngine.depositCollateral(wethAddress, COLLATERAL_AMOUNT);
+        dscEngine.mintDsc(additionalAmountNeeded);
+        vm.stopPrank();
+
+        uint256 initialWethBalance = weth.balanceOf(user1);
+        uint256 tokenAmountFromLiquidation = dscEngine.getTokenAmountFromUsd(wethAddress, user3DscMintedInitial);
+        uint256 expectedLiquidationProceeds =
+            tokenAmountFromLiquidation + ((tokenAmountFromLiquidation * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION);
+
+        vm.prank(user1);
+        dsc.approve(address(dscEngine), type(uint256).max);
+        vm.prank(user1);
+        dscEngine.liquidate(user3, wethAddress, type(uint256).max);
+        uint256 finalWethBalance = weth.balanceOf(user1);
+        (uint256 user3DscMintedFinal,) = dscEngine.getAccountInformation(user3);
+        assertEq(finalWethBalance, initialWethBalance + expectedLiquidationProceeds);
+        assertEq(user3DscMintedFinal, 0);
+    }
+
     function testLiquidateUpdatesStateAndDistributesCorrectCollateralAmountPlusBonus()
         external
         skipFork

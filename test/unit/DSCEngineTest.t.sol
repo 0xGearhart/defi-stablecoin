@@ -213,13 +213,6 @@ contract DSCEngineTest is Test, CodeConstants {
         vm.stopPrank();
     }
 
-    // function testDepositCollateralFailsIfReentered() external usersFunded {
-    //     // somehow forcefully reenter and ensure reentrancy guard throws expected error
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-    //     vm.stopPrank();
-    // }
-
     function testDepositCollateralRevertsIfTokenIsNotApproved() external {
         ERC20Mock invalidErc20 = new ERC20Mock();
         invalidErc20.mint(user1, STARTING_ERC20_BALANCE);
@@ -286,13 +279,6 @@ contract DSCEngineTest is Test, CodeConstants {
         vm.expectRevert(DSCEngine.DSCEngine__AmountMustBeMoreThanZero.selector);
         dscEngine.mintDsc(0);
     }
-
-    // function testMintDscFailsIfReentered() external usersFunded usersDeposited {
-    //     // somehow forcefully reenter and ensure reentrancy guard throws expected error
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-    //     vm.stopPrank();
-    // }
 
     function testMintDscFailsIfUserHasNoCollateralDeposited() external usersFunded {
         vm.prank(user1);
@@ -372,13 +358,6 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.redeemCollateral(wethAddress, 0);
     }
 
-    // function testRedeemCollateralFailsIfReentered() external usersFunded usersDeposited {
-    //     // somehow forcefully reenter and ensure reentrancy guard throws expected error
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-    //     vm.stopPrank();
-    // }
-
     function testRedeemCollateralFailsIfBreaksHealthFactor() external usersFunded usersDeposited usersMinted {
         vm.prank(user1);
         vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, 0));
@@ -414,13 +393,6 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.burnDsc(0);
         vm.stopPrank();
     }
-
-    // function testBurnDscFailsIfReentered() external usersFunded usersDeposited usersMinted {
-    //     // somehow forcefully reenter and ensure reentrancy guard throws expected error
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-    //     vm.stopPrank();
-    // }
 
     function testBurnDscFailsWhenBurningMoreThanBalance() external usersFunded usersDeposited usersMinted {
         vm.startPrank(user1);
@@ -500,13 +472,6 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.liquidate(user3, wethAddress, 0);
     }
 
-    // function testLiquidateFailsIfReentered() external usersFunded usersDeposited {
-    //     // somehow forcefully reenter and ensure reentrancy guard throws expected error
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-    //     vm.stopPrank();
-    // }
-
     function testLiquidateFailsIfUserIsNotEligibleForLiquidation() external usersFunded usersDeposited usersMinted {
         // liquidate non-eligible user with collateral deposited and dsc minted
         vm.prank(user1);
@@ -526,6 +491,7 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.liquidate(user3, wethAddress, DSC_MINT_AMOUNT);
     }
 
+    // ToDo:
     // // not sure how to induce this error. need to figure out how paying someone elses debt can break your health factor
     // function testLiquidateFailsIfLiquidationBreaksLiquidatorsHealthFactor()
     //     external
@@ -538,6 +504,7 @@ contract DSCEngineTest is Test, CodeConstants {
     //     dscEngine.liquidate(user2, wethAddress, DSC_MINT_AMOUNT);
     // }
 
+    // ToDo:
     // this might not be possible to hit since having 0 DSC minted means they do not have a broken health factor and that check fails first
     function testLiquidateWithUint256MaxFailsIfUserToBeLiquidatedHasZeroDscMinted()
         external

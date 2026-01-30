@@ -161,6 +161,7 @@ contract DSCEngine is ReentrancyGuard {
     )
         external
         nonReentrant
+        moreThanZero(debtToCover)
     {
         // verify user has broken health factor
         uint256 startingUserHealthFactor = _healthFactor(userToBeLiquidated);
@@ -171,7 +172,6 @@ contract DSCEngine is ReentrancyGuard {
             (uint256 dscMinted,) = _getAccountInformation(userToBeLiquidated);
             debtToCover = dscMinted;
         }
-        _moreThanZero(debtToCover);
         // calculate amount collateral + liquidation bonus to send liquidator
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralTokenAddress, debtToCover);
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;

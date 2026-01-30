@@ -166,8 +166,7 @@ foundry-defi-stablecoin/
 ```bash
 git clone https://github.com/0xGearhart/foundry-defi-stablecoin
 cd foundry-defi-stablecoin
-make install
-forge build
+make
 ```
 
 ### Environment Setup
@@ -241,13 +240,13 @@ forge test --match-test testFunctionName
 ```
 
 ### Test Coverage
-Check test coverage
+Check test coverage:
 
 ```bash
 forge coverage
 ```
 
-Generate coverage report:
+Create test coverage report and save to .txt file:
 
 ```bash
 make coverage-report
@@ -385,7 +384,7 @@ For production use, consider:
 Generate gas report:
 
 ```bash
-forge test --gas-report
+make gas-report
 ```
 
 Generate gas snapshot:

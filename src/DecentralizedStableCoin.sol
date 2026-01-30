@@ -21,6 +21,7 @@ contract DecentralizedStableCoin is ERC20Burnable, Ownable {
     error DecentralizedStableCoin__AmountMustBeMoreThanZero();
     error DecentralizedStableCoin__BurnAmountExceedsBalance();
     error DecentralizedStableCoin__NotZeroAddress();
+    error DecentralizedStableCoin__CanOnlyBurnDSCThroughDSCEngine();
 
     constructor(string memory tokenName, string memory tokenSymbol) ERC20(tokenName, tokenSymbol) Ownable(msg.sender) {}
 
@@ -44,5 +45,9 @@ contract DecentralizedStableCoin is ERC20Burnable, Ownable {
             revert DecentralizedStableCoin__BurnAmountExceedsBalance();
         }
         super.burn(amount);
+    }
+
+    function burnFrom(address, uint256) public pure override {
+        revert DecentralizedStableCoin__CanOnlyBurnDSCThroughDSCEngine();
     }
 }

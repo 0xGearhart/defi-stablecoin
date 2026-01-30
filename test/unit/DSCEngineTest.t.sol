@@ -213,13 +213,6 @@ contract DSCEngineTest is Test, CodeConstants {
         vm.stopPrank();
     }
 
-    // function testDepositCollateralFailsIfReentered() external usersFunded {
-    //     // somehow forcefully reenter and ensure reentrancy guard throws expected error
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-    //     vm.stopPrank();
-    // }
-
     function testDepositCollateralRevertsIfTokenIsNotApproved() external {
         ERC20Mock invalidErc20 = new ERC20Mock();
         invalidErc20.mint(user1, STARTING_ERC20_BALANCE);
@@ -286,13 +279,6 @@ contract DSCEngineTest is Test, CodeConstants {
         vm.expectRevert(DSCEngine.DSCEngine__AmountMustBeMoreThanZero.selector);
         dscEngine.mintDsc(0);
     }
-
-    // function testMintDscFailsIfReentered() external usersFunded usersDeposited {
-    //     // somehow forcefully reenter and ensure reentrancy guard throws expected error
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-    //     vm.stopPrank();
-    // }
 
     function testMintDscFailsIfUserHasNoCollateralDeposited() external usersFunded {
         vm.prank(user1);
@@ -372,13 +358,6 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.redeemCollateral(wethAddress, 0);
     }
 
-    // function testRedeemCollateralFailsIfReentered() external usersFunded usersDeposited {
-    //     // somehow forcefully reenter and ensure reentrancy guard throws expected error
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-    //     vm.stopPrank();
-    // }
-
     function testRedeemCollateralFailsIfBreaksHealthFactor() external usersFunded usersDeposited usersMinted {
         vm.prank(user1);
         vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, 0));
@@ -414,13 +393,6 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.burnDsc(0);
         vm.stopPrank();
     }
-
-    // function testBurnDscFailsIfReentered() external usersFunded usersDeposited usersMinted {
-    //     // somehow forcefully reenter and ensure reentrancy guard throws expected error
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-    //     vm.stopPrank();
-    // }
 
     function testBurnDscFailsWhenBurningMoreThanBalance() external usersFunded usersDeposited usersMinted {
         vm.startPrank(user1);
@@ -500,13 +472,6 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.liquidate(user3, wethAddress, 0);
     }
 
-    // function testLiquidateFailsIfReentered() external usersFunded usersDeposited {
-    //     // somehow forcefully reenter and ensure reentrancy guard throws expected error
-    //     vm.startPrank(user1);
-    //     vm.expectRevert(ReentrancyGuard.ReentrancyGuardReentrantCall.selector);
-    //     vm.stopPrank();
-    // }
-
     function testLiquidateFailsIfUserIsNotEligibleForLiquidation() external usersFunded usersDeposited usersMinted {
         // liquidate non-eligible user with collateral deposited and dsc minted
         vm.prank(user1);
@@ -526,6 +491,7 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.liquidate(user3, wethAddress, DSC_MINT_AMOUNT);
     }
 
+    // ToDo:
     // // not sure how to induce this error. need to figure out how paying someone elses debt can break your health factor
     // function testLiquidateFailsIfLiquidationBreaksLiquidatorsHealthFactor()
     //     external
@@ -537,6 +503,49 @@ contract DSCEngineTest is Test, CodeConstants {
     //     vm.expectRevert(DSCEngine.DSCEngine__BreaksHealthFactor.selector);
     //     dscEngine.liquidate(user2, wethAddress, DSC_MINT_AMOUNT);
     // }
+
+    // ToDo:
+    // this might not be possible to hit since having 0 DSC minted means they do not have a broken health factor and that check fails first
+    function testLiquidateWithUint256MaxFailsIfUserToBeLiquidatedHasZeroDscMinted()
+        external
+        skipFork
+        usersFunded
+        usersDeposited
+        usersMinted
+        user3CanBeLiquidated
+    {}
+
+    function testLiquidateWithUint256MaxLiquidatesTheMaximumAmount()
+        external
+        skipFork
+        usersFunded
+        usersDeposited
+        usersMinted
+        user3CanBeLiquidated
+    {
+        weth.mint(user1, STARTING_ERC20_BALANCE);
+        (uint256 user3DscMintedInitial,) = dscEngine.getAccountInformation(user3);
+        uint256 additionalAmountNeeded = user3DscMintedInitial - dsc.balanceOf(user1);
+        vm.startPrank(user1);
+        weth.approve(address(dscEngine), COLLATERAL_AMOUNT);
+        dscEngine.depositCollateral(wethAddress, COLLATERAL_AMOUNT);
+        dscEngine.mintDsc(additionalAmountNeeded);
+        vm.stopPrank();
+
+        uint256 initialWethBalance = weth.balanceOf(user1);
+        uint256 tokenAmountFromLiquidation = dscEngine.getTokenAmountFromUsd(wethAddress, user3DscMintedInitial);
+        uint256 expectedLiquidationProceeds =
+            tokenAmountFromLiquidation + ((tokenAmountFromLiquidation * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION);
+
+        vm.prank(user1);
+        dsc.approve(address(dscEngine), type(uint256).max);
+        vm.prank(user1);
+        dscEngine.liquidate(user3, wethAddress, type(uint256).max);
+        uint256 finalWethBalance = weth.balanceOf(user1);
+        (uint256 user3DscMintedFinal,) = dscEngine.getAccountInformation(user3);
+        assertEq(finalWethBalance, initialWethBalance + expectedLiquidationProceeds);
+        assertEq(user3DscMintedFinal, 0);
+    }
 
     function testLiquidateUpdatesStateAndDistributesCorrectCollateralAmountPlusBonus()
         external

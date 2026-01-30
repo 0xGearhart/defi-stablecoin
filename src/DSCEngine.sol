@@ -168,6 +168,10 @@ contract DSCEngine is ReentrancyGuard {
         if (startingUserHealthFactor >= MIN_HEALTH_FACTOR) {
             revert DSCEngine__UserNotEligibleForLiquidation();
         }
+        if (debtToCover == type(uint256).max) {
+            (uint256 dscMinted,) = _getAccountInformation(userToBeLiquidated);
+            debtToCover = dscMinted;
+        }
         // calculate amount collateral + liquidation bonus to send liquidator
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralTokenAddress, debtToCover);
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;

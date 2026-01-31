@@ -76,6 +76,13 @@ contract DSCEngine is ReentrancyGuard {
     event CollateralRedeemed(
         address indexed redeemedFrom, address indexed redeemedTo, address indexed token, uint256 amount
     );
+    event UserLiquidated(
+        address indexed user,
+        address indexed liquidator,
+        address indexed token,
+        uint256 liquidationAmount,
+        uint256 liquidationBonus
+    );
 
     /*//////////////////////////////////////////////////////////////
                                MODIFIERS
@@ -176,6 +183,8 @@ contract DSCEngine is ReentrancyGuard {
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralTokenAddress, debtToCover);
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
         uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+        // emit liquidation event
+        emit UserLiquidated(userToBeLiquidated, msg.sender, collateralTokenAddress, debtToCover, bonusCollateral);
         // redeem the liquidated collateral and burn DSC
         _redeemCollateral(userToBeLiquidated, msg.sender, collateralTokenAddress, totalCollateralToRedeem);
         _burnDsc(debtToCover, userToBeLiquidated, msg.sender);

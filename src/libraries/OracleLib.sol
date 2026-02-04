@@ -36,12 +36,15 @@ library OracleLib {
             priceFeed.latestRoundData();
 
         if (answer <= 0) {
+            // ToDo: check error works correctly
             revert OracleLib__InvalidPrice();
         }
         if (answeredInRound < roundId) {
+            // ToDo: check error works correctly
             revert OracleLib__IncompleteRound();
         }
         if (updatedAt == 0 || startedAt == 0) {
+            // ToDo: check error works correctly
             revert OracleLib__InvalidPrice();
         }
 

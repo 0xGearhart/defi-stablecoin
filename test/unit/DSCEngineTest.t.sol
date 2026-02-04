@@ -625,6 +625,14 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.getUsdValue(wethAddress, ethAmount);
     }
 
+    function testGetUsdValueShouldFailIfPriceIsInvalid() external {
+        uint256 ethAmount = 15 ether;
+        MockV3Aggregator(ethUsdPriceFeed).updateAnswer(0);
+        vm.expectRevert(OracleLib.OracleLib__InvalidPrice.selector);
+        vm.prank(user1);
+        dscEngine.getUsdValue(wethAddress, ethAmount);
+    }
+
     function testGetUsdValue() external view {
         uint256 ethAmount = 15 ether;
         AggregatorV3Interface priceFeed = AggregatorV3Interface(ethUsdPriceFeed);
@@ -657,6 +665,14 @@ contract DSCEngineTest is Test, CodeConstants {
         uint256 staleAt = updatedAt + 3 hours + 1;
         vm.warp(staleAt);
         vm.expectRevert(OracleLib.OracleLib__StalePrice.selector);
+        vm.prank(user1);
+        dscEngine.getTokenAmountFromUsd(wethAddress, usdAmount);
+    }
+
+    function testGetTokenAmountFromUsdShouldFailIfPriceIsInvalid() external {
+        uint256 usdAmount = 100 ether;
+        MockV3Aggregator(ethUsdPriceFeed).updateAnswer(0);
+        vm.expectRevert(OracleLib.OracleLib__InvalidPrice.selector);
         vm.prank(user1);
         dscEngine.getTokenAmountFromUsd(wethAddress, usdAmount);
     }

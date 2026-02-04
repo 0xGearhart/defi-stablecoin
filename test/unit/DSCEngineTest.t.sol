@@ -7,7 +7,7 @@ import {DSCEngine, OracleLib} from "../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {MockV3Aggregator} from "../mocks/MockV3Aggregator.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
+import {ERC20DecimalsMock} from "../mocks/ERC20DecimalsMock.sol";
 import {Test} from "forge-std/Test.sol";
 
 contract DSCEngineTest is Test, CodeConstants {
@@ -49,8 +49,8 @@ contract DSCEngineTest is Test, CodeConstants {
     HelperConfig public helperConfig;
     DeployDSC public deployer;
     DSCEngine public dscEngine;
-    ERC20Mock public weth;
-    ERC20Mock public wbtc;
+    ERC20DecimalsMock public weth;
+    ERC20DecimalsMock public wbtc;
     address public ethUsdPriceFeed;
     address public btcUsdPriceFeed;
     address public wethAddress;
@@ -160,8 +160,8 @@ contract DSCEngineTest is Test, CodeConstants {
         deployer = new DeployDSC();
         (dsc, dscEngine, helperConfig) = deployer.run();
         (ethUsdPriceFeed, btcUsdPriceFeed, wethAddress, wbtcAddress, account) = helperConfig.activeNetworkConfig();
-        weth = ERC20Mock(wethAddress);
-        wbtc = ERC20Mock(wbtcAddress);
+        weth = ERC20DecimalsMock(wethAddress);
+        wbtc = ERC20DecimalsMock(wbtcAddress);
         vm.deal(user1, STARTING_USER_BALANCE);
         vm.deal(user2, STARTING_USER_BALANCE);
         vm.deal(user3, STARTING_USER_BALANCE);
@@ -214,7 +214,7 @@ contract DSCEngineTest is Test, CodeConstants {
     }
 
     function testDepositCollateralRevertsIfTokenIsNotApproved() external {
-        ERC20Mock invalidErc20 = new ERC20Mock();
+        ERC20DecimalsMock invalidErc20 = new ERC20DecimalsMock("INVALID", "INV", 18);
         invalidErc20.mint(user1, STARTING_ERC20_BALANCE);
         vm.startPrank(user1);
         invalidErc20.approve(address(dscEngine), COLLATERAL_AMOUNT);
@@ -504,16 +504,29 @@ contract DSCEngineTest is Test, CodeConstants {
     //     dscEngine.liquidate(user2, wethAddress, DSC_MINT_AMOUNT);
     // }
 
-    // ToDo:
-    // this might not be possible to hit since having 0 DSC minted means they do not have a broken health factor and that check fails first
     function testLiquidateWithUint256MaxFailsIfUserToBeLiquidatedHasZeroDscMinted()
         external
-        skipFork
         usersFunded
         usersDeposited
         usersMinted
-        user3CanBeLiquidated
-    {}
+    {
+        // liquidate non-eligible user with collateral deposited and dsc minted
+        vm.prank(user1);
+        vm.expectRevert(DSCEngine.DSCEngine__UserNotEligibleForLiquidation.selector);
+        dscEngine.liquidate(user2, wethAddress, type(uint256).max);
+        // liquidate non-eligible user with 0 collateral deposited and 0 dsc minted
+        vm.prank(user1);
+        vm.expectRevert(DSCEngine.DSCEngine__UserNotEligibleForLiquidation.selector);
+        dscEngine.liquidate(user3, wethAddress, type(uint256).max);
+        // liquidate non-eligible user with collateral deposited and 0 dsc minted
+        vm.startPrank(user3);
+        weth.approve(address(dscEngine), COLLATERAL_AMOUNT);
+        dscEngine.depositCollateral(wethAddress, COLLATERAL_AMOUNT);
+        vm.stopPrank();
+        vm.prank(user1);
+        vm.expectRevert(DSCEngine.DSCEngine__UserNotEligibleForLiquidation.selector);
+        dscEngine.liquidate(user3, wethAddress, type(uint256).max);
+    }
 
     function testLiquidateWithUint256MaxLiquidatesTheMaximumAmount()
         external
@@ -629,6 +642,14 @@ contract DSCEngineTest is Test, CodeConstants {
         assertEq(expectedUsd, actualUsd);
     }
 
+    function testGetUsdValueOnLocalChainForWbtc() external view skipFork {
+        uint256 btcAmount = 15 * 10 ** uint256(wbtc.decimals());
+        // 15 WBTC * $1000 = 15,000e18
+        uint256 expectedUsd = 15_000e18;
+        uint256 actualUsd = dscEngine.getUsdValue(wbtcAddress, btcAmount);
+        assertEq(expectedUsd, actualUsd);
+    }
+
     function testGetTokenAmountFromUsdShouldFailIfPriceIsStale() external {
         uint256 usdAmount = 100 ether;
         AggregatorV3Interface priceFeed = AggregatorV3Interface(ethUsdPriceFeed);
@@ -654,6 +675,13 @@ contract DSCEngineTest is Test, CodeConstants {
         uint256 expectedWethAmount = 0.05 ether;
         uint256 actualWethAmount = dscEngine.getTokenAmountFromUsd(wethAddress, usdAmount);
         assertEq(expectedWethAmount, actualWethAmount);
+    }
+
+    function testGetTokenAmountFromUsdOnLocalChainForWbtc() external view skipFork {
+        uint256 usdAmount = 10_000 ether;
+        uint256 expectedWbtcAmount = 10 * 10 ** uint256(wbtc.decimals());
+        uint256 actualWbtcAmount = dscEngine.getTokenAmountFromUsd(wbtcAddress, usdAmount);
+        assertEq(expectedWbtcAmount, actualWbtcAmount);
     }
 
     function testGetHealthFactorShouldFailIfPriceIsStale() external usersFunded usersDeposited usersMinted {

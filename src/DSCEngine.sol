@@ -6,6 +6,7 @@ import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {OracleLib} from "./libraries/OracleLib.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
@@ -43,6 +44,8 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__UserNotEligibleForLiquidation();
     error DSCEngine__HealthFactorNotImproved();
     error DSCEngine__InvalidPriceFeedOrTokenAddress();
+    error DSCEngine__InvalidTokenDecimals();
+    error DSCEngine__TokenDoesNotImplementDecimals();
 
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
@@ -64,6 +67,7 @@ contract DSCEngine is ReentrancyGuard {
     uint256 private constant LIQUIDATION_PRECISION = 100;
 
     mapping(address token => address priceFeed) private s_priceFeeds;
+    mapping(address token => uint8 decimals) private s_tokenDecimals;
     mapping(address user => uint256 amountDscMinted) private s_dscMinted;
     mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited;
     address[] private s_collateralTokens;
@@ -111,7 +115,20 @@ contract DSCEngine is ReentrancyGuard {
             if (tokenAddresses[i] == address(0) || priceFeedAddresses[i] == address(0)) {
                 revert DSCEngine__InvalidPriceFeedOrTokenAddress();
             }
+            uint8 tokenDecimals;
+            try IERC20Metadata(tokenAddresses[i]).decimals() returns (uint8 decimals) {
+                tokenDecimals = decimals;
+            } catch {
+                // ToDo: check error works correctly
+                revert DSCEngine__TokenDoesNotImplementDecimals();
+            }
+            if (tokenDecimals > 18) {
+                // ToDo: check error works correctly
+                revert DSCEngine__InvalidTokenDecimals();
+            }
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
+            // ToDo: test decimals are set correctly
+            s_tokenDecimals[tokenAddresses[i]] = tokenDecimals;
             s_collateralTokens.push(tokenAddresses[i]);
         }
         i_dsc = DecentralizedStableCoin(dscAddress);
@@ -184,6 +201,7 @@ contract DSCEngine is ReentrancyGuard {
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
         uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
         // emit liquidation event
+        // ToDo: write test to verify event is emitted as expected
         emit UserLiquidated(userToBeLiquidated, msg.sender, collateralTokenAddress, debtToCover, bonusCollateral);
         // redeem the liquidated collateral and burn DSC
         _redeemCollateral(userToBeLiquidated, msg.sender, collateralTokenAddress, totalCollateralToRedeem);
@@ -492,6 +510,11 @@ contract DSCEngine is ReentrancyGuard {
      * @param collateralTokenAddress Address of collateral token
      * @param amountUsdInWei Amount of USD with 18 decimals (1e18 = $1)
      * @return Amount of collateral tokens equivalent in value to the given USD amount
+     *
+     * @dev Unit conventions:
+     * - USD values are 18 decimals.
+     * - Token amounts are in each token's native decimals.
+     * - Chainlink price feeds are 8 decimals and are scaled to 18 for USD math.
      */
     function getTokenAmountFromUsd(
         address collateralTokenAddress,
@@ -503,7 +526,9 @@ contract DSCEngine is ReentrancyGuard {
     {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[collateralTokenAddress]);
         (, int256 price,,,) = priceFeed.stalePriceFeedCheckLatestRoundData();
-        return (amountUsdInWei * PRECISION) / (uint256(price) * ADDITIONAL_PRICE_FEED_PRECISION);
+        // USD is 18 decimals. Convert USD -> token units by multiplying by token precision, then divide by price(18d).
+        uint256 tokenPrecision = _getTokenPrecision(collateralTokenAddress);
+        return (amountUsdInWei * tokenPrecision) / (uint256(price) * ADDITIONAL_PRICE_FEED_PRECISION);
     }
 
     /**
@@ -526,17 +551,23 @@ contract DSCEngine is ReentrancyGuard {
      * @param token address of the token
      * @param amount amount of the token
      * @return USD value of the given amount of the token
+     *
+     * @dev Unit conventions:
+     * - USD values are 18 decimals.
+     * - Token amounts are in each token's native decimals.
+     * - Chainlink price feeds are 8 decimals and are scaled to 18 for USD math.
      */
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price,,,) = priceFeed.stalePriceFeedCheckLatestRoundData();
-        // 1 eth = $1000
-        // the returned value from chainlink will be 1000 * 1e8
-        // need to change price to uint256 and get correct decimals before continuing
-        // (1000 * 1e8) * 1e10
+        // Chainlink price feeds are 8 decimals; scale to 18 for USD math.
         uint256 priceWithAdditionalPrecision = uint256(price) * ADDITIONAL_PRICE_FEED_PRECISION;
-        // divide by 1e18 after multiplying by amount to get final value
-        // (priceWithAdditionalPrecision * amount) / 1e18
-        return (priceWithAdditionalPrecision * amount) / PRECISION;
+        // Token amounts are in native decimals; divide by token precision to get 18d USD value.
+        uint256 tokenPrecision = _getTokenPrecision(token);
+        return (priceWithAdditionalPrecision * amount) / tokenPrecision;
+    }
+
+    function _getTokenPrecision(address token) private view returns (uint256) {
+        return 10 ** uint256(s_tokenDecimals[token]);
     }
 }

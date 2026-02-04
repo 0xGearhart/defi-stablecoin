@@ -5,7 +5,7 @@ pragma solidity 0.8.33;
 import {AggregatorV3Interface, DSCEngine} from "../../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../../src/DecentralizedStableCoin.sol";
 import {MockV3Aggregator} from "../../mocks/MockV3Aggregator.sol";
-import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
+import {ERC20DecimalsMock} from "../../mocks/ERC20DecimalsMock.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {Test} from "forge-std/Test.sol";
 
@@ -14,8 +14,8 @@ contract Handler is Test {
 
     DSCEngine public dscEngine;
     DecentralizedStableCoin public dsc;
-    ERC20Mock public weth;
-    ERC20Mock public wbtc;
+    ERC20DecimalsMock public weth;
+    ERC20DecimalsMock public wbtc;
     MockV3Aggregator public ethUsdPriceFeed;
     MockV3Aggregator public btcUsdPriceFeed;
 
@@ -40,8 +40,8 @@ contract Handler is Test {
         dscEngine = _dscEngine;
         dsc = _dsc;
         address[] memory collateralAddresses = dscEngine.getCollateralTokenAddresses();
-        weth = ERC20Mock(collateralAddresses[0]);
-        wbtc = ERC20Mock(collateralAddresses[1]);
+        weth = ERC20DecimalsMock(collateralAddresses[0]);
+        wbtc = ERC20DecimalsMock(collateralAddresses[1]);
         ethUsdPriceFeed = MockV3Aggregator(dscEngine.getPriceFeedAddress(address(weth)));
         btcUsdPriceFeed = MockV3Aggregator(dscEngine.getPriceFeedAddress(address(wbtc)));
     }
@@ -51,7 +51,7 @@ contract Handler is Test {
     //////////////////////////////////////////////////////////////*/
 
     function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
-        ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
+        ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
         // bound between 1 and max size to cut down on fails due to depositing 0 or depositing near uint256 max
         amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
 
@@ -74,7 +74,7 @@ contract Handler is Test {
             return;
         }
         // pick random collateral
-        ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
+        ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
         // get info to determine max withdraw in USD without breaking health factor
         (uint256 totalDscMinted, uint256 totalCollateralValueInUsd) = dscEngine.getAccountInformation(sender);
         uint256 maxUsdValueBeforeBreakingHealthFactor = (totalCollateralValueInUsd / 2) - totalDscMinted;
@@ -194,7 +194,7 @@ contract Handler is Test {
             return;
         }
         debtToCover = bound(debtToCover, 1, uint256(type(uint96).max));
-        ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
+        ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
         dscEngine.liquidate(address(collateral), userToBeLiquidated, debtToCover);
         timesLiquidateCalled++;
     }
@@ -264,7 +264,7 @@ contract Handler is Test {
     )
         public
     {
-        ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
+        ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
         // bound between 1 and max size to cut down on fails due to depositing 0 or depositing near uint256 max
         amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
         uint256 depositValue = dscEngine.getUsdValue(address(collateral), amountCollateral);
@@ -304,7 +304,7 @@ contract Handler is Test {
                             HELPER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function _getCollateralFromSeed(uint256 collateralSeed) private view returns (ERC20Mock) {
+    function _getCollateralFromSeed(uint256 collateralSeed) private view returns (ERC20DecimalsMock) {
         if (collateralSeed % 2 == 0) {
             return weth;
         } else {

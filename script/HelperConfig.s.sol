@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.33;
 
+import {ERC20DecimalsMock} from "../test/mocks/ERC20DecimalsMock.sol";
 import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
-import {ERC20Mock} from "@openzeppelin/contracts/mocks/token/ERC20Mock.sol";
 import {Script} from "forge-std/Script.sol";
 
 abstract contract CodeConstants {
@@ -39,10 +39,12 @@ abstract contract CodeConstants {
     // local chain id and info
     uint256 public constant LOCAL_CHAIN_ID = 31_337;
     // mock initialize info
-    uint8 public constant DECIMALS = 8;
+    uint8 public constant PRICE_FEED_DECIMALS = 8;
     int256 public constant MOCK_ETH_USD_PRICE = 2000e8;
     int256 public constant MOCK_BTC_USD_PRICE = 1000e8;
     uint256 public constant INITIAL_MOCK_BALANCE = 1000e8;
+    uint8 public constant WETH_DECIMALS = 18;
+    uint8 public constant WBTC_DECIMALS = 8;
 }
 
 contract HelperConfig is Script, CodeConstants {
@@ -118,13 +120,13 @@ contract HelperConfig is Script, CodeConstants {
         // deploy and initialize mocks
         vm.startBroadcast();
         // create mock weth and weth price feed
-        MockV3Aggregator ethUsdPriceFeed = new MockV3Aggregator(DECIMALS, MOCK_ETH_USD_PRICE);
-        // ERC20Mock wethMock = new ERC20Mock("WETH", "WETH", msg.sender, INITIAL_MOCK_BALANCE);
-        ERC20Mock wethMock = new ERC20Mock();
+        MockV3Aggregator ethUsdPriceFeed = new MockV3Aggregator(PRICE_FEED_DECIMALS, MOCK_ETH_USD_PRICE);
+        ERC20DecimalsMock wethMock = new ERC20DecimalsMock("WETH", "WETH", WETH_DECIMALS);
+        wethMock.mint(msg.sender, INITIAL_MOCK_BALANCE * (10 ** WETH_DECIMALS));
         // create mock wbtc and wbtc price feed
-        MockV3Aggregator btcUsdPriceFeed = new MockV3Aggregator(DECIMALS, MOCK_BTC_USD_PRICE);
-        // ERC20Mock wbtcMock = new ERC20Mock("WBTC", "WBTC", msg.sender, INITIAL_MOCK_BALANCE);
-        ERC20Mock wbtcMock = new ERC20Mock();
+        MockV3Aggregator btcUsdPriceFeed = new MockV3Aggregator(PRICE_FEED_DECIMALS, MOCK_BTC_USD_PRICE);
+        ERC20DecimalsMock wbtcMock = new ERC20DecimalsMock("WBTC", "WBTC", WBTC_DECIMALS);
+        wbtcMock.mint(msg.sender, INITIAL_MOCK_BALANCE * (10 ** WBTC_DECIMALS));
         vm.stopBroadcast();
 
         return NetworkConfig({

@@ -7,6 +7,7 @@ import {OracleLib} from "./libraries/OracleLib.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
@@ -39,7 +40,6 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__AmountMustBeMoreThanZero();
     error DSCEngine__NotApprovedToken();
     error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
-    error DSCEngine__TransferFailed();
     error DSCEngine__MintFailed();
     error DSCEngine__UserNotEligibleForLiquidation();
     error DSCEngine__HealthFactorNotImproved();
@@ -53,6 +53,7 @@ contract DSCEngine is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     using OracleLib for AggregatorV3Interface;
+    using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
@@ -237,10 +238,7 @@ contract DSCEngine is ReentrancyGuard {
     {
         s_collateralDeposited[msg.sender][collateralTokenAddress] += amountCollateral;
         emit CollateralDeposited(msg.sender, collateralTokenAddress, amountCollateral);
-        bool success = IERC20(collateralTokenAddress).transferFrom(msg.sender, address(this), amountCollateral);
-        if (!success) {
-            revert DSCEngine__TransferFailed();
-        }
+        IERC20(collateralTokenAddress).safeTransferFrom(msg.sender, address(this), amountCollateral);
     }
 
     /**
@@ -293,10 +291,7 @@ contract DSCEngine is ReentrancyGuard {
      */
     function _burnDsc(uint256 amountDscToBurn, address onBehalfOf, address dscFrom) private {
         s_dscMinted[onBehalfOf] -= amountDscToBurn;
-        bool success = i_dsc.transferFrom(dscFrom, address(this), amountDscToBurn);
-        if (!success) {
-            revert DSCEngine__TransferFailed();
-        }
+        IERC20(address(i_dsc)).safeTransferFrom(dscFrom, address(this), amountDscToBurn);
         i_dsc.burn(amountDscToBurn);
     }
 
@@ -314,10 +309,7 @@ contract DSCEngine is ReentrancyGuard {
     {
         s_collateralDeposited[redeemedFrom][collateralTokenAddress] -= amountCollateral;
         emit CollateralRedeemed(redeemedFrom, redeemedTo, collateralTokenAddress, amountCollateral);
-        bool success = IERC20(collateralTokenAddress).transfer(redeemedTo, amountCollateral);
-        if (!success) {
-            revert DSCEngine__TransferFailed();
-        }
+        IERC20(collateralTokenAddress).safeTransfer(redeemedTo, amountCollateral);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -109,6 +109,10 @@ contract DSCEngine is ReentrancyGuard {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @dev Collateral tokens are assumed to be standard ERC20s without transfer fees or rebasing.
+     * Fee-on-transfer and rebasing tokens can break accounting and are not supported.
+     */
     constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {
         uint256 tokenAddressesLength = tokenAddresses.length;
         if (tokenAddressesLength != priceFeedAddresses.length) {

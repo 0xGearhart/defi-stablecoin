@@ -348,6 +348,10 @@ contract DSCEngine is ReentrancyGuard {
         }
     }
 
+    function _getTokenPrecision(address token) private view returns (uint256) {
+        return 10 ** uint256(s_tokenDecimals[token]);
+    }
+
     function _revertIfHealthFactorIsBroken(address user) internal view {
         uint256 userHealthFactor = _healthFactor(user);
         if (userHealthFactor < MIN_HEALTH_FACTOR) {
@@ -430,6 +434,15 @@ contract DSCEngine is ReentrancyGuard {
      */
     function getCollateralTokenAddresses() external view returns (address[] memory) {
         return s_collateralTokens;
+    }
+
+    /**
+     * @notice Gets the stored number of decimals for a supported collateral token
+     * @param token address of collateral token
+     * @return number of decimals
+     */
+    function getCollateralTokenDecimals(address token) external view returns (uint8) {
+        return s_tokenDecimals[token];
     }
 
     /**
@@ -565,9 +578,5 @@ contract DSCEngine is ReentrancyGuard {
         // Token amounts are in native decimals; divide by token precision to get 18d USD value.
         uint256 tokenPrecision = _getTokenPrecision(token);
         return (priceWithAdditionalPrecision * amount) / tokenPrecision;
-    }
-
-    function _getTokenPrecision(address token) private view returns (uint256) {
-        return 10 ** uint256(s_tokenDecimals[token]);
     }
 }

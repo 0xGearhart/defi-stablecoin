@@ -46,6 +46,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__InvalidPriceFeedOrTokenAddress();
     error DSCEngine__InvalidTokenDecimals();
     error DSCEngine__TokenDoesNotImplementDecimals();
+    error DSCEngine__DuplicateCollateralToken();
 
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
@@ -68,6 +69,7 @@ contract DSCEngine is ReentrancyGuard {
 
     mapping(address token => address priceFeed) private s_priceFeeds;
     mapping(address token => uint8 decimals) private s_tokenDecimals;
+    mapping(address token => bool isRegistered) private s_isCollateralToken;
     mapping(address user => uint256 amountDscMinted) private s_dscMinted;
     mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited;
     address[] private s_collateralTokens;
@@ -112,6 +114,9 @@ contract DSCEngine is ReentrancyGuard {
             revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
         }
         for (uint256 i = 0; i < tokenAddressesLength; i++) {
+            if (s_isCollateralToken[tokenAddresses[i]]) {
+                revert DSCEngine__DuplicateCollateralToken();
+            }
             if (tokenAddresses[i] == address(0) || priceFeedAddresses[i] == address(0)) {
                 revert DSCEngine__InvalidPriceFeedOrTokenAddress();
             }
@@ -130,6 +135,7 @@ contract DSCEngine is ReentrancyGuard {
             // ToDo: test decimals are set correctly
             s_tokenDecimals[tokenAddresses[i]] = tokenDecimals;
             s_collateralTokens.push(tokenAddresses[i]);
+            s_isCollateralToken[tokenAddresses[i]] = true;
         }
         i_dsc = DecentralizedStableCoin(dscAddress);
     }

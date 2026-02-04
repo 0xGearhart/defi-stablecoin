@@ -201,6 +201,17 @@ contract DSCEngineTest is Test, CodeConstants {
         new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
     }
 
+    function testDscEngineConstructorRevertsOnDuplicateCollateralToken() external {
+        address[] memory tokenAddresses = new address[](2);
+        tokenAddresses[0] = address(weth);
+        tokenAddresses[1] = address(weth);
+        address[] memory priceFeedAddresses = new address[](2);
+        priceFeedAddresses[0] = ethUsdPriceFeed;
+        priceFeedAddresses[1] = ethUsdPriceFeed;
+        vm.expectRevert(DSCEngine.DSCEngine__DuplicateCollateralToken.selector);
+        new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+    }
+
     /*//////////////////////////////////////////////////////////////
                            DEPOSIT COLLATERAL
     //////////////////////////////////////////////////////////////*/

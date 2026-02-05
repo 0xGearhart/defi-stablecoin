@@ -33,10 +33,7 @@ contract InvariantTest is StdInvariant, Test {
         (,, weth, wbtc,) = config.activeNetworkConfig();
         handler = new Handler(dscEngine, dsc);
 
-        // would make dscEngine target contract in open invariant testing but need to set target contract to handler address if we want our calls to be made in a sensible order (deposit => mint => burn => withdraw)
-        // targetContract(address(dscEngine));
-
-        // using a handler like this makes it less random but gives us more valid calls
+        // using a handler makes it less random but gives us more valid calls
         targetContract(address(handler));
     }
 
@@ -65,19 +62,21 @@ contract InvariantTest is StdInvariant, Test {
         assert(totalDepositedValue >= totalDscSupply);
     }
 
+    function invariant_dscEngineCollateralBalancesShouldEqualTotalDeposits() public view {
+        // get deposits from ghost variable
+        uint256 totalWethDeposits = handler.totalDeposits(weth);
+        uint256 totalWbtcDeposits = handler.totalDeposits(wbtc);
+        // get actual ERC20 balances
+        uint256 totalWethBalance = IERC20(weth).balanceOf(address(dscEngine));
+        uint256 totalWbtcBalance = IERC20(wbtc).balanceOf(address(dscEngine));
+        // assert invariant held
+        assertEq(totalWethDeposits, totalWethBalance);
+        assertEq(totalWbtcDeposits, totalWbtcBalance);
+    }
+
     // ToDo: finish this invariant
     function invariant_userShouldNeverWithdrawMoreThanWhatTheyDeposit() public view {
         // ToDo: get deposits and withdraws from handler address and run asserts to verify invariant
-    }
-
-    function invariant_dscEngineCollateralBalancesShouldEqualTotalDeposits() public view {
-        uint256 totalWethDeposits = handler.totalDeposits(weth);
-        uint256 totalWbtcDeposits = handler.totalDeposits(wbtc);
-        uint256 totalWethBalance = IERC20(weth).balanceOf(address(dscEngine));
-        uint256 totalWbtcBalance = IERC20(wbtc).balanceOf(address(dscEngine));
-
-        assertEq(totalWethDeposits, totalWethBalance);
-        assertEq(totalWbtcDeposits, totalWbtcBalance);
     }
 
     // ToDo: get variables from handler contract so all view functions can be uncommented and included
@@ -121,4 +120,7 @@ contract InvariantTest is StdInvariant, Test {
 
 //     // ToDo: finish this invariant
 //     function invariant_accountsWithBrokenHealthFactorsCanBeLiquidated() public view {}
+
+//     // ToDo: finish this invariant
+//     function invariant_accountsWithGoodHealthFactorsCanNotBeLiquidated() public view {}
 // }

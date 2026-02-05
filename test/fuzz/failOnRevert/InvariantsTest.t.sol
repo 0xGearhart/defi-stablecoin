@@ -36,12 +36,13 @@ contract InvariantTest is StdInvariant, Test {
         // using a handler makes it less random but gives us more valid calls
         targetContract(address(handler));
 
-        bytes4[] memory selectors = new bytes4[](5);
+        bytes4[] memory selectors = new bytes4[](6);
         selectors[0] = Handler.depositCollateral.selector;
         selectors[1] = Handler.redeemCollateral.selector;
         selectors[2] = Handler.mintDsc.selector;
         selectors[3] = Handler.burnDsc.selector;
         selectors[4] = Handler.depositCollateralAndMintDsc.selector;
+        selectors[5] = Handler.redeemCollateralForDsc.selector;
 
         targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
     }
@@ -126,6 +127,17 @@ contract InvariantTest is StdInvariant, Test {
 //         handler = new LiquidationHandler(dscEngine, dsc);
 
 //         targetContract(address(handler));
+
+//         bytes4[] memory selectors = new bytes4[](7);
+//         selectors[0] = Handler.depositCollateral.selector;
+//         selectors[1] = Handler.redeemCollateral.selector;
+//         selectors[2] = Handler.mintDsc.selector;
+//         selectors[3] = Handler.burnDsc.selector;
+//         selectors[4] = Handler.depositCollateralAndMintDsc.selector;
+//         selectors[5] = Handler.redeemCollateralForDsc.selector;
+//         selectors[6] = Handler.liquidate.selector;
+
+//         targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
 //     }
 
 //     // ToDo: finish this invariant

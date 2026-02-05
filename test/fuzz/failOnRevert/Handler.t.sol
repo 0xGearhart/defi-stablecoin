@@ -194,31 +194,52 @@ contract Handler is Test {
     }
 
     function redeemCollateralForDsc(uint256 collateralSeed, uint256 amountCollateral, uint256 amountDscToBurn) public {
+        address sender = _getMintedAddressFromSeed(collateralSeed);
+        if (sender == address(0)) {
+            return;
+        }
         ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
-        uint256 engineBalanceBefore = collateral.balanceOf(address(dscEngine));
-        // bound between 1 and max size to cut down on fails due to depositing 0 or depositing near uint256 max
-        amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
-        uint256 depositValue = dscEngine.getUsdValue(address(collateral), amountCollateral);
-        uint256 maxAmountDscToBurn = depositValue / 2;
-        amountDscToBurn = bound(amountDscToBurn, 0, maxAmountDscToBurn);
+        uint256 currentCollateralBalance = dscEngine.getAccountCollateralBalance(sender, address(collateral));
+        if (currentCollateralBalance == 0) {
+            return;
+        }
+
+        (uint256 totalDscMinted, uint256 totalCollateralValueInUsd) = dscEngine.getAccountInformation(sender);
+        uint256 dscBalance = dsc.balanceOf(sender);
+        uint256 maxDscToBurn = totalDscMinted < dscBalance ? totalDscMinted : dscBalance;
+        amountDscToBurn = bound(amountDscToBurn, 0, maxDscToBurn);
         if (amountDscToBurn == 0) {
             return;
         }
-        vm.startPrank(msg.sender);
-        collateral.mint(msg.sender, amountCollateral);
-        collateral.approve(address(dscEngine), amountCollateral);
-        dscEngine.depositCollateralAndMintDsc(address(collateral), amountCollateral, amountDscToBurn);
-        vm.stopPrank();
-        // if new deposit, add to array of addresses that can call mintDsc
-        if (!usersWithCollateralDeposited.contains(msg.sender)) {
-            usersWithCollateralDeposited.add(msg.sender);
+
+        uint256 dscMintedAfterBurn = totalDscMinted - amountDscToBurn;
+        uint256 maxUsdValueBeforeBreakingHealthFactor = (totalCollateralValueInUsd / 2) - dscMintedAfterBurn;
+        maxUsdValueBeforeBreakingHealthFactor = bound(
+            maxUsdValueBeforeBreakingHealthFactor,
+            0,
+            dscEngine.getUsdValue(address(collateral), currentCollateralBalance)
+        );
+        uint256 maxCollateralToRedeem =
+            dscEngine.getTokenAmountFromUsd(address(collateral), maxUsdValueBeforeBreakingHealthFactor);
+        amountCollateral = bound(amountCollateral, 0, maxCollateralToRedeem);
+        if (amountCollateral == 0) {
+            return;
         }
-        // if new minter, add to array of addresses that can call burnDsc or redeemCollateralForDsc
-        if (!usersWithDscMinted.contains(msg.sender)) {
-            usersWithDscMinted.add(msg.sender);
+
+        uint256 engineBalanceBefore = collateral.balanceOf(address(dscEngine));
+        vm.startPrank(sender);
+        dsc.approve(address(dscEngine), amountDscToBurn);
+        dscEngine.redeemCollateralForDsc(address(collateral), amountCollateral, amountDscToBurn);
+        vm.stopPrank();
+        _recordCollateralDelta(collateral, engineBalanceBefore);
+
+        if (!usersWithCollateralDeposited.contains(sender)) {
+            usersWithCollateralDeposited.add(sender);
+        }
+        if (!usersWithDscMinted.contains(sender)) {
+            usersWithDscMinted.add(sender);
         }
         timesRedeemAndBurnCalled++;
-        _recordCollateralDelta(collateral, engineBalanceBefore);
     }
 
     function liquidate(
@@ -277,15 +298,6 @@ contract Handler is Test {
         if (totalCollateralValueAfterLiquidation == 0 && usersWithCollateralDeposited.contains(userToBeLiquidated)) {
             usersWithCollateralDeposited.remove(userToBeLiquidated);
         }
-
-        // need to get amount of collateral withdrawn through liquidation from event to use in ghost variable tracking
-        // CollateralRedeemed event should have what I need
-
-        // this wont work anymore since the bonus is variable, can't easily predict the amount that will be redeemed
-        // uint256 amountCollateral = dscEngine.getTokenAmountFromUsd(
-        //     address(collateral),
-        //     (debtToCover + (debtToCover * dscEngine.getLiquidationBonus / dscEngine.getLiquidationPrecision))
-        // );
 
         timesLiquidateCalled++;
     }
@@ -352,65 +364,6 @@ contract Handler is Test {
         }
     }
 }
-
-// function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral, uint256 addressSeed) public {
-//     // pick random address that has deposited
-//     address sender = _getDepositedAddressFromSeed(addressSeed);
-//     if (sender == address(0)) {
-//         return;
-//     }
-//     // pick random collateral
-//     ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
-//     uint256 userCollateralBalance = dscEngine.getAccountCollateralBalance(sender, address(collateral));
-//     uint256 userCollateralValue = dscEngine.getUsdValue(address(collateral), userCollateralBalance);
-//     (uint256 totalDscMinted, uint256 totalCollateralValueInUsd) = dscEngine.getAccountInformation(sender);
-//     uint256 estimatedCollateralValue = totalCollateralValueInUsd - userCollateralValue;
-//     uint256 maxCollateralToRedeem = userCollateralBalance;
-//     if (dscEngine.getHealthFactorEstimate(totalDscMinted, estimatedCollateralValue) < 1) {
-//         uint256 maxUsdValueBeforeBreakingHealthFactor = (userCollateralValue / 2) - totalDscMinted;
-//         uint256 maxRedeemWithoutBrakingHealthFactor =
-//             dscEngine.getTokenAmountFromUsd(address(collateral), maxUsdValueBeforeBreakingHealthFactor);
-//         maxCollateralToRedeem = bound(maxCollateralToRedeem, 0, maxRedeemWithoutBrakingHealthFactor);
-//     }
-//     amountCollateral = bound(amountCollateral, 0, maxCollateralToRedeem);
-//     if (amountCollateral == 0) {
-//         return;
-//     }
-//     // redeem collateral amount
-//     vm.prank(sender);
-//     dscEngine.redeemCollateral(address(collateral), amountCollateral);
-//     // if user has 0 USD value deposited after redeem; remove them from array so they do not try to mint DSC without depositing first
-//     (, uint256 totalCollateralValueAfterRedemption) = dscEngine.getAccountInformation(sender);
-//     if (totalCollateralValueAfterRedemption == 0 && usersWithCollateralDeposited.contains(sender)) {
-//         usersWithCollateralDeposited.remove(sender);
-//     }
-//     timesRedeemCalled++;
-// }
-
-// function liquidate(uint256 addressSeed, uint256 collateralSeed, uint256 debtToCover) public {
-//     address userToBeLiquidated = _getMintedAddressFromSeed(addressSeed);
-//     uint256 minHealthFactor = dscEngine.getMinHealthFactor();
-//     uint256 userHealthFactor = dscEngine.getHealthFactor(userToBeLiquidated);
-//     if (userHealthFactor >= minHealthFactor) {
-//         return;
-//     }
-//     (uint256 totalDscMinted,) = dscEngine.getAccountInformation(userToBeLiquidated);
-//     debtToCover = bound(debtToCover, 1, totalDscMinted);
-//     ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
-//     dscEngine.liquidate(address(collateral), userToBeLiquidated, debtToCover);
-
-//     // need to get amount of collateral withdrawn through liquidation from event to use in ghost variable tracking
-//     // CollateralRedeemed event should have what I need
-
-//     // this wont work anymore since the bonus is variable, can't easily predict the amount that will be redeemed
-//     uint256 amountCollateral = dscEngine.getTokenAmountFromUsd(
-//         address(collateral),
-//         (debtToCover + (debtToCover * dscEngine.getLiquidationBonus / dscEngine.getLiquidationPrecision))
-//     );
-
-//     timesLiquidateCalled++;
-//     totalDeposits[address(collateral)] -= amountCollateral;
-// }
 
 // function liquidateMax(uint256 addressSeed, uint256 collateralSeed) public {
 //     address userToBeLiquidated = _getMintedAddressFromSeed(addressSeed);

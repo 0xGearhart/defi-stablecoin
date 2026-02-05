@@ -621,6 +621,81 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.liquidate(user3, wethAddress, DSC_MINT_AMOUNT);
     }
 
+    function testLiquidateRevertsIfDebtToCoverExceedsDscMinted()
+        external
+        usersFunded
+        usersDeposited
+        usersMinted
+        user3CanBeLiquidated
+    {
+        (uint256 dscMinted,) = dscEngine.getAccountInformation(user3);
+        vm.prank(user1);
+        vm.expectRevert(DSCEngine.DSCEngine__DebtToCoverExceedsDscMinted.selector);
+        dscEngine.liquidate(user3, wethAddress, dscMinted + 1);
+    }
+
+    function testLiquidateRevertsIfDebtToCoverExceedsCollateralDeposited()
+        external
+        usersFunded
+        usersDeposited
+        usersMinted
+        user3CanBeLiquidated
+    {
+        // Drop price so collateral value is well below minted DSC, then set debtToCover just above collateral value.
+        MockV3Aggregator(ethUsdPriceFeed).updateAnswer(1e8); // $1
+        (uint256 dscMinted,) = dscEngine.getAccountInformation(user3);
+        uint256 totalDepositedCollateral = dscEngine.getAccountCollateralBalance(user3, wethAddress);
+        uint256 totalDepositedCollateralUsdValue = dscEngine.getUsdValue(wethAddress, totalDepositedCollateral);
+        assertGt(dscMinted, totalDepositedCollateralUsdValue);
+
+        uint256 debtToCover = totalDepositedCollateralUsdValue + 1;
+        vm.prank(user1);
+        vm.expectRevert(DSCEngine.DSCEngine__DebtToCoverExceedsCollateralDeposited.selector);
+        dscEngine.liquidate(user3, wethAddress, debtToCover);
+    }
+
+    function testLiquidateCapsBonusWhenCollateralIsTight()
+        external
+        skipFork
+        usersFunded
+        usersDeposited
+        usersMinted
+        user3CanBeLiquidated
+    {
+        // Set price so collateral value is ~105% of debt. Full 10% bonus would exceed collateral.
+        (uint256 dscMinted,) = dscEngine.getAccountInformation(user3);
+        uint256 totalDepositedCollateral = dscEngine.getAccountCollateralBalance(user3, wethAddress);
+        uint256 desiredCollateralUsdValue = (dscMinted * 105) / 100;
+        uint256 tokenPrecision = 1e18;
+        uint256 price = (desiredCollateralUsdValue * tokenPrecision) / (totalDepositedCollateral * 1e10);
+        if (price == 0) {
+            price = 1;
+        }
+        MockV3Aggregator(ethUsdPriceFeed).updateAnswer(int256(price));
+
+        // Ensure liquidator has enough DSC to cover the full debt.
+        uint256 user1DscBalance = dsc.balanceOf(user1);
+        if (user1DscBalance < dscMinted) {
+            uint256 additionalAmountNeeded = dscMinted - user1DscBalance;
+            weth.mint(user1, STARTING_ERC20_BALANCE);
+            vm.startPrank(user1);
+            weth.approve(address(dscEngine), COLLATERAL_AMOUNT);
+            dscEngine.depositCollateral(wethAddress, COLLATERAL_AMOUNT);
+            dscEngine.mintDsc(additionalAmountNeeded);
+            vm.stopPrank();
+        }
+
+        uint256 initialWethBalance = weth.balanceOf(user1);
+        vm.prank(user1);
+        dsc.approve(address(dscEngine), type(uint256).max);
+        vm.prank(user1);
+        dscEngine.liquidate(user3, wethAddress, dscMinted);
+        uint256 finalWethBalance = weth.balanceOf(user1);
+
+        assertEq(finalWethBalance, initialWethBalance + totalDepositedCollateral);
+        assertEq(dscEngine.getAccountCollateralBalance(user3, wethAddress), 0);
+    }
+
     /*//////////////////////////////////////////////////////////////
                               VIEW & PURE
     //////////////////////////////////////////////////////////////*/

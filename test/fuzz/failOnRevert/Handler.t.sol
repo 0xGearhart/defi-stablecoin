@@ -4,8 +4,8 @@ pragma solidity 0.8.33;
 
 import {AggregatorV3Interface, DSCEngine} from "../../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../../src/DecentralizedStableCoin.sol";
-import {MockV3Aggregator} from "../../mocks/MockV3Aggregator.sol";
 import {ERC20DecimalsMock} from "../../mocks/ERC20DecimalsMock.sol";
+import {MockV3Aggregator} from "../../mocks/MockV3Aggregator.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {Test} from "forge-std/Test.sol";
 
@@ -32,6 +32,8 @@ contract Handler is Test {
     uint256 public timesDepositAndMintCalled;
     EnumerableSet.AddressSet internal usersWithCollateralDeposited;
     EnumerableSet.AddressSet internal usersWithDscMinted;
+
+    mapping(address collateral => uint256 amount) public totalDeposits;
 
     // use uint96 max to avoid overflow and math issues related to using uint256 max.
     uint256 constant MAX_DEPOSIT_SIZE = type(uint96).max;
@@ -65,6 +67,7 @@ contract Handler is Test {
             usersWithCollateralDeposited.add(msg.sender);
         }
         timesDepositCalled++;
+        totalDeposits[address(collateral)] += amountCollateral;
     }
 
     function redeemCollateral(uint256 collateralSeed, uint256 amountCollateral, uint256 addressSeed) public {
@@ -103,6 +106,7 @@ contract Handler is Test {
             usersWithCollateralDeposited.remove(sender);
         }
         timesRedeemCalled++;
+        totalDeposits[address(collateral)] -= amountCollateral;
     }
 
     // ToDo: remove all this unused code if not necessary
@@ -196,7 +200,18 @@ contract Handler is Test {
         debtToCover = bound(debtToCover, 1, uint256(type(uint96).max));
         ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
         dscEngine.liquidate(address(collateral), userToBeLiquidated, debtToCover);
+
+        // need to get amount of collateral withdrawn through liquidation from event to use in ghost variable tracking
+        // CollateralRedeemed event should have what I need
+
+        // this wont work anymore since the bonus is variable, can't easily predict the amount that will be redeemed
+        // uint256 amountCollateral = dscEngine.getTokenAmountFromUsd(
+        //     address(collateral),
+        //     (debtToCover + (debtToCover * dscEngine.getLiquidationBonus / dscEngine.getLiquidationPrecision))
+        // );
+
         timesLiquidateCalled++;
+        // totalDeposits[address(collateral)] -= amountCollateral;
     }
 
     // function liquidate(
@@ -287,6 +302,7 @@ contract Handler is Test {
             usersWithDscMinted.add(msg.sender);
         }
         timesDepositAndMintCalled++;
+        totalDeposits[address(collateral)] += amountCollateral;
     }
 
     // this breaks our invariant since price plummeting more than 50% without successful liquidations results in an under-collateralized protocol

@@ -37,9 +37,11 @@ contract DSCEngine is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DSCEngine__DebtToCoverExceedsCollateralDeposited();
+    error DSCEngine__DebtToCoverExceedsDscMinted();
     error DSCEngine__AmountMustBeMoreThanZero();
     error DSCEngine__NotApprovedToken();
-    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
     error DSCEngine__MintFailed();
     error DSCEngine__UserNotEligibleForLiquidation();
     error DSCEngine__HealthFactorNotImproved();
@@ -203,14 +205,36 @@ contract DSCEngine is ReentrancyGuard {
         if (startingUserHealthFactor >= MIN_HEALTH_FACTOR) {
             revert DSCEngine__UserNotEligibleForLiquidation();
         }
+        // get user info needed for checks
+        (uint256 dscMinted,) = _getAccountInformation(userToBeLiquidated);
+        uint256 totalDepositedCollateral = s_collateralDeposited[userToBeLiquidated][collateralTokenAddress];
+        // get USD value
+        uint256 totalDepositedCollateralUsdValue = getUsdValue(collateralTokenAddress, totalDepositedCollateral);
+        // if max is selected then set appropriate debtToCover
         if (debtToCover == type(uint256).max) {
-            (uint256 dscMinted,) = _getAccountInformation(userToBeLiquidated);
-            debtToCover = dscMinted;
+            // calculate the minimum amount of debtToCover to fully liquidate users collateral of this type and still get full 10% bonus
+            uint256 dscNeededToFullyLiquidateWithBonus =
+                totalDepositedCollateralUsdValue * (LIQUIDATION_PRECISION - LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
+            debtToCover =
+                dscNeededToFullyLiquidateWithBonus > dscMinted ? dscMinted : dscNeededToFullyLiquidateWithBonus;
+        }
+        if (debtToCover > dscMinted) {
+            revert DSCEngine__DebtToCoverExceedsDscMinted();
         }
         // calculate amount collateral + liquidation bonus to send liquidator
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralTokenAddress, debtToCover);
+        if (tokenAmountFromDebtCovered > totalDepositedCollateral) {
+            revert DSCEngine__DebtToCoverExceedsCollateralDeposited();
+        }
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
         uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+        // If user has more collateral value than debtToCover but less than enough to pay full 10% bonus, adjust bonus amount down to whats available
+        if (tokenAmountFromDebtCovered < totalDepositedCollateral && totalCollateralToRedeem > totalDepositedCollateral)
+        {
+            // update amounts after cap is applied
+            totalCollateralToRedeem = totalDepositedCollateral;
+            bonusCollateral = totalCollateralToRedeem - tokenAmountFromDebtCovered;
+        }
         // emit liquidation event
         // ToDo: write test to verify event is emitted as expected
         emit UserLiquidated(userToBeLiquidated, msg.sender, collateralTokenAddress, debtToCover, bonusCollateral);

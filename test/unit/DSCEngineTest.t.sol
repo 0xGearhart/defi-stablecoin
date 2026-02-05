@@ -5,9 +5,11 @@ import {DeployDSC} from "../../script/DeployDSC.s.sol";
 import {CodeConstants, HelperConfig} from "../../script/HelperConfig.s.sol";
 import {DSCEngine, OracleLib} from "../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
-import {MockV3Aggregator} from "../mocks/MockV3Aggregator.sol";
-import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {ERC20DecimalsMock} from "../mocks/ERC20DecimalsMock.sol";
+import {ERC20NoDecimalsMock} from "../mocks/ERC20NoDecimalsMock.sol";
+import {MockV3Aggregator} from "../mocks/MockV3Aggregator.sol";
+import {MockV3AggregatorWithAnsweredInRound} from "../mocks/MockV3AggregatorWithAnsweredInRound.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {Test} from "forge-std/Test.sol";
 
 contract DSCEngineTest is Test, CodeConstants {
@@ -212,6 +214,33 @@ contract DSCEngineTest is Test, CodeConstants {
         new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
     }
 
+    function testDscEngineConstructorRevertsWhenTokenDoesNotImplementDecimals() external {
+        ERC20NoDecimalsMock invalidToken = new ERC20NoDecimalsMock("NODEC", "NODEC");
+        MockV3Aggregator feed = new MockV3Aggregator(8, 2000e8);
+        address[] memory tokenAddresses = new address[](1);
+        tokenAddresses[0] = address(invalidToken);
+        address[] memory priceFeedAddresses = new address[](1);
+        priceFeedAddresses[0] = address(feed);
+        vm.expectRevert(DSCEngine.DSCEngine__TokenDoesNotImplementDecimals.selector);
+        new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+    }
+
+    function testDscEngineConstructorRevertsWhenTokenDecimalsAreInvalid() external {
+        ERC20DecimalsMock invalidToken = new ERC20DecimalsMock("DEC19", "DEC19", 19);
+        MockV3Aggregator feed = new MockV3Aggregator(8, 2000e8);
+        address[] memory tokenAddresses = new address[](1);
+        tokenAddresses[0] = address(invalidToken);
+        address[] memory priceFeedAddresses = new address[](1);
+        priceFeedAddresses[0] = address(feed);
+        vm.expectRevert(DSCEngine.DSCEngine__InvalidTokenDecimals.selector);
+        new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+    }
+
+    function testDscEngineConstructorStoresTokenDecimals() external view {
+        assertEq(dscEngine.getCollateralTokenDecimals(wethAddress), 18);
+        assertEq(dscEngine.getCollateralTokenDecimals(wbtcAddress), 8);
+    }
+
     /*//////////////////////////////////////////////////////////////
                            DEPOSIT COLLATERAL
     //////////////////////////////////////////////////////////////*/
@@ -233,16 +262,6 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.depositCollateral(address(invalidErc20), COLLATERAL_AMOUNT);
         vm.stopPrank();
     }
-
-    // not necessary since ERC20 will revert before DSCEngine
-    // might be another way to trigger this specific error
-    // function testDepositCollateralRevertsIfUserHasInsufficientCollateralBalance() external {
-    //     vm.startPrank(user1);
-    //     wbtc.approve(address(dscEngine), COLLATERAL_AMOUNT);
-    //     vm.expectRevert(DSCEngine.DSCEngine__TransferFailed.selector);
-    //     dscEngine.depositCollateral(wbtcAddress, COLLATERAL_AMOUNT);
-    //     vm.stopPrank();
-    // }
 
     function testDepositCollateralEmitsEvent() external usersFunded {
         vm.startPrank(user1);
@@ -336,6 +355,14 @@ contract DSCEngineTest is Test, CodeConstants {
     /*//////////////////////////////////////////////////////////////
                     DEPOSIT COLLATERAL AND MINT DSC
     //////////////////////////////////////////////////////////////*/
+
+    function testDepositCollateralAndMintDscRevertsIfMintAmountIsZero() external usersFunded {
+        vm.startPrank(user1);
+        weth.approve(address(dscEngine), COLLATERAL_AMOUNT);
+        vm.expectRevert(DSCEngine.DSCEngine__AmountMustBeMoreThanZero.selector);
+        dscEngine.depositCollateralAndMintDsc(wethAddress, COLLATERAL_AMOUNT, 0);
+        vm.stopPrank();
+    }
 
     function testDepositCollateralAndMintDscUpdatesState() external usersFunded {
         vm.startPrank(user1);
@@ -443,6 +470,27 @@ contract DSCEngineTest is Test, CodeConstants {
     /*//////////////////////////////////////////////////////////////
                        REDEEM COLLATERAL FOR DSC
     //////////////////////////////////////////////////////////////*/
+
+    function testRedeemCollateralForDscRevertsIfCollateralAmountIsZero()
+        external
+        usersFunded
+        usersDeposited
+        usersMinted
+    {
+        vm.prank(user1);
+        dsc.approve(address(dscEngine), DSC_MINT_AMOUNT);
+        vm.prank(user1);
+        vm.expectRevert(DSCEngine.DSCEngine__AmountMustBeMoreThanZero.selector);
+        dscEngine.redeemCollateralForDsc(wethAddress, 0, DSC_MINT_AMOUNT);
+    }
+
+    function testRedeemCollateralForDscRevertsIfBurnAmountIsZero() external usersFunded usersDeposited usersMinted {
+        vm.prank(user1);
+        dsc.approve(address(dscEngine), DSC_MINT_AMOUNT);
+        vm.prank(user1);
+        vm.expectRevert(DSCEngine.DSCEngine__AmountMustBeMoreThanZero.selector);
+        dscEngine.redeemCollateralForDsc(wethAddress, COLLATERAL_AMOUNT, 0);
+    }
 
     function testRedeemCollateralForDscUpdatesState() external usersFunded usersDeposited usersMinted {
         (uint256 dscMintedBefore,) = dscEngine.getAccountInformation(user1);
@@ -784,6 +832,50 @@ contract DSCEngineTest is Test, CodeConstants {
         uint256 expectedWbtcAmount = 10 * 10 ** uint256(wbtc.decimals());
         uint256 actualWbtcAmount = dscEngine.getTokenAmountFromUsd(wbtcAddress, usdAmount);
         assertEq(expectedWbtcAmount, actualWbtcAmount);
+    }
+
+    function testGetPriceFeedAddressReturnsConfiguredFeed() external view {
+        assertEq(dscEngine.getPriceFeedAddress(wethAddress), ethUsdPriceFeed);
+        assertEq(dscEngine.getPriceFeedAddress(wbtcAddress), btcUsdPriceFeed);
+    }
+
+    function testGetCollateralTokenAddressesReturnsAllTokens() external view {
+        address[] memory tokens = dscEngine.getCollateralTokenAddresses();
+        assertEq(tokens.length, 2);
+        assertEq(tokens[0], wethAddress);
+        assertEq(tokens[1], wbtcAddress);
+    }
+
+    function testGetDecentralizedStableCoinReturnsDscAddress() external view {
+        assertEq(dscEngine.getDecentralizedStableCoin(), address(dsc));
+    }
+
+    function testOracleLibRevertsIfIncompleteRound() external {
+        MockV3AggregatorWithAnsweredInRound feed = new MockV3AggregatorWithAnsweredInRound(8, 2000e8, 1);
+        feed.updateRoundData(2, 2000e8, block.timestamp, block.timestamp, 1);
+        vm.expectRevert(OracleLib.OracleLib__IncompleteRound.selector);
+        OracleLib.stalePriceFeedCheckLatestRoundData(AggregatorV3Interface(address(feed)));
+    }
+
+    function testOracleLibRevertsIfAnswerIsZero() external {
+        MockV3Aggregator feed = new MockV3Aggregator(8, 2000e8);
+        feed.updateRoundData(1, 0, block.timestamp, block.timestamp);
+        vm.expectRevert(OracleLib.OracleLib__InvalidPrice.selector);
+        OracleLib.stalePriceFeedCheckLatestRoundData(AggregatorV3Interface(address(feed)));
+    }
+
+    function testOracleLibRevertsIfUpdatedAtIsZero() external {
+        MockV3Aggregator feed = new MockV3Aggregator(8, 2000e8);
+        feed.updateRoundData(1, 2000e8, 0, block.timestamp);
+        vm.expectRevert(OracleLib.OracleLib__InvalidPrice.selector);
+        OracleLib.stalePriceFeedCheckLatestRoundData(AggregatorV3Interface(address(feed)));
+    }
+
+    function testOracleLibRevertsIfStartedAtIsZero() external {
+        MockV3Aggregator feed = new MockV3Aggregator(8, 2000e8);
+        feed.updateRoundData(1, 2000e8, block.timestamp, 0);
+        vm.expectRevert(OracleLib.OracleLib__InvalidPrice.selector);
+        OracleLib.stalePriceFeedCheckLatestRoundData(AggregatorV3Interface(address(feed)));
     }
 
     function testGetHealthFactorShouldFailIfPriceIsStale() external usersFunded usersDeposited usersMinted {

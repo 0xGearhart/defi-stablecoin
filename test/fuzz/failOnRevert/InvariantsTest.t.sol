@@ -70,9 +70,7 @@ contract InvariantTest is StdInvariant, Test {
         // ToDo: get deposits and withdraws from handler address and run asserts to verify invariant
     }
 
-    // ToDo: finish this invariant. think if liquidations would change this or not
     function invariant_dscEngineCollateralBalancesShouldEqualTotalDeposits() public view {
-        // ToDo: get individual balances from a mapping in handler contract and iterate over amounts to verify against ending contract balances
         uint256 totalWethDeposits = handler.totalDeposits(weth);
         uint256 totalWbtcDeposits = handler.totalDeposits(wbtc);
         uint256 totalWethBalance = IERC20(weth).balanceOf(address(dscEngine));

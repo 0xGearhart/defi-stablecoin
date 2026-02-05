@@ -35,6 +35,15 @@ contract InvariantTest is StdInvariant, Test {
 
         // using a handler makes it less random but gives us more valid calls
         targetContract(address(handler));
+
+        bytes4[] memory selectors = new bytes4[](5);
+        selectors[0] = Handler.depositCollateral.selector;
+        selectors[1] = Handler.redeemCollateral.selector;
+        selectors[2] = Handler.mintDsc.selector;
+        selectors[3] = Handler.burnDsc.selector;
+        selectors[4] = Handler.depositCollateralAndMintDsc.selector;
+
+        targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
     }
 
     function invariant_protocolMustHaveMoreCollateralValueThanTotalDscSupply() public view {
@@ -57,6 +66,7 @@ contract InvariantTest is StdInvariant, Test {
         console2.log("Times Burn Called Successfully: : ", handler.timesBurnCalled());
         console2.log("Times Liquidate Called Successfully: : ", handler.timesLiquidateCalled());
         console2.log("Times DepositAndMint Called Successfully: : ", handler.timesDepositAndMintCalled());
+        console2.log("Times RedeemAndBurn Called Successfully: : ", handler.timesRedeemAndBurnCalled());
 
         // compare value to the total amount of DSC minted
         assert(totalDepositedValue >= totalDscSupply);

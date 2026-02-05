@@ -131,15 +131,12 @@ contract DSCEngine is ReentrancyGuard {
             try IERC20Metadata(tokenAddresses[i]).decimals() returns (uint8 decimals) {
                 tokenDecimals = decimals;
             } catch {
-                // ToDo: check error works correctly
                 revert DSCEngine__TokenDoesNotImplementDecimals();
             }
             if (tokenDecimals > 18) {
-                // ToDo: check error works correctly
                 revert DSCEngine__InvalidTokenDecimals();
             }
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
-            // ToDo: test decimals are set correctly
             s_tokenDecimals[tokenAddresses[i]] = tokenDecimals;
             s_collateralTokens.push(tokenAddresses[i]);
             s_isCollateralToken[tokenAddresses[i]] = true;

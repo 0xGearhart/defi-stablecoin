@@ -31,9 +31,11 @@ contract Handler is Test {
     uint256 public timesBurnCalled;
     uint256 public timesDepositAndMintCalled;
     uint256 public timesRedeemAndBurnCalled;
+    uint256 public timesAttemptToLiquidateHealthyAccountCalled;
     EnumerableSet.AddressSet internal usersWithCollateralDeposited;
     EnumerableSet.AddressSet internal usersWithDscMinted;
     EnumerableSet.AddressSet internal usersEverDeposited;
+    address[] internal actors;
 
     mapping(address collateral => uint256 amount) public totalDeposits;
     mapping(address user => mapping(address collateral => uint256 amount)) public userDeposits;
@@ -50,6 +52,11 @@ contract Handler is Test {
         wbtc = ERC20DecimalsMock(collateralAddresses[1]);
         ethUsdPriceFeed = MockV3Aggregator(dscEngine.getPriceFeedAddress(address(weth)));
         btcUsdPriceFeed = MockV3Aggregator(dscEngine.getPriceFeedAddress(address(wbtc)));
+
+        actors = new address[](32);
+        for (uint256 i = 0; i < actors.length; i++) {
+            actors[i] = makeAddr(string(abi.encodePacked("actor", vm.toString(i))));
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -57,24 +64,25 @@ contract Handler is Test {
     //////////////////////////////////////////////////////////////*/
 
     function depositCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
+        address actor = _getActorFromSeed(collateralSeed);
         ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
         // bound between 1 and max size to cut down on fails due to depositing 0 or depositing near uint256 max
         amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
 
         uint256 engineBalanceBefore = collateral.balanceOf(address(dscEngine));
-        vm.startPrank(msg.sender);
-        collateral.mint(msg.sender, amountCollateral);
+        vm.startPrank(actor);
+        collateral.mint(actor, amountCollateral);
         collateral.approve(address(dscEngine), amountCollateral);
         dscEngine.depositCollateral(address(collateral), amountCollateral);
         vm.stopPrank();
         _recordCollateralDelta(collateral, engineBalanceBefore);
-        _recordUserDeposit(msg.sender, address(collateral), amountCollateral);
+        _recordUserDeposit(actor, address(collateral), amountCollateral);
         // if new deposit, add to array of addresses that can call mintDsc
-        if (!usersWithCollateralDeposited.contains(msg.sender)) {
-            usersWithCollateralDeposited.add(msg.sender);
+        if (!usersWithCollateralDeposited.contains(actor)) {
+            usersWithCollateralDeposited.add(actor);
         }
-        if (!usersEverDeposited.contains(msg.sender)) {
-            usersEverDeposited.add(msg.sender);
+        if (!usersEverDeposited.contains(actor)) {
+            usersEverDeposited.add(actor);
         }
         timesDepositCalled++;
     }
@@ -174,6 +182,7 @@ contract Handler is Test {
     )
         public
     {
+        address actor = _getActorFromSeed(collateralSeed ^ amountCollateral);
         ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
         // bound between 1 and max size to cut down on fails due to depositing 0 or depositing near uint256 max
         amountCollateral = bound(amountCollateral, 1, MAX_DEPOSIT_SIZE);
@@ -184,23 +193,23 @@ contract Handler is Test {
             return;
         }
         uint256 engineBalanceBefore = collateral.balanceOf(address(dscEngine));
-        vm.startPrank(msg.sender);
-        collateral.mint(msg.sender, amountCollateral);
+        vm.startPrank(actor);
+        collateral.mint(actor, amountCollateral);
         collateral.approve(address(dscEngine), amountCollateral);
         dscEngine.depositCollateralAndMintDsc(address(collateral), amountCollateral, amountDscToMint);
         vm.stopPrank();
         _recordCollateralDelta(collateral, engineBalanceBefore);
-        _recordUserDeposit(msg.sender, address(collateral), amountCollateral);
+        _recordUserDeposit(actor, address(collateral), amountCollateral);
         // if new deposit, add to array of addresses that can call mintDsc
-        if (!usersWithCollateralDeposited.contains(msg.sender)) {
-            usersWithCollateralDeposited.add(msg.sender);
+        if (!usersWithCollateralDeposited.contains(actor)) {
+            usersWithCollateralDeposited.add(actor);
         }
-        if (!usersEverDeposited.contains(msg.sender)) {
-            usersEverDeposited.add(msg.sender);
+        if (!usersEverDeposited.contains(actor)) {
+            usersEverDeposited.add(actor);
         }
         // if new minter, add to array of addresses that can call burnDsc or redeemCollateralForDsc
-        if (!usersWithDscMinted.contains(msg.sender)) {
-            usersWithDscMinted.add(msg.sender);
+        if (!usersWithDscMinted.contains(actor)) {
+            usersWithDscMinted.add(actor);
         }
         timesDepositAndMintCalled++;
     }
@@ -256,6 +265,38 @@ contract Handler is Test {
             usersWithDscMinted.add(sender);
         }
         timesRedeemAndBurnCalled++;
+    }
+
+    function attemptToLiquidateHealthyAccount(
+        uint256 addressSeed,
+        uint256 userToBeLiquidatedSeed,
+        uint256 collateralSeed,
+        uint256 debtToCover
+    )
+        public
+    {
+        ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
+        address sender = _getMintedAddressFromSeed(addressSeed);
+        address userToBeLiquidated = _getMintedAddressFromSeed(userToBeLiquidatedSeed);
+        if (sender == address(0) || userToBeLiquidated == address(0)) {
+            return;
+        }
+        (uint256 totalDscMinted,) = dscEngine.getAccountInformation(sender);
+        if (dscEngine.getHealthFactor(userToBeLiquidated) < MIN_HEALTH_FACTOR) {
+            return;
+        }
+        debtToCover = bound(debtToCover, 0, totalDscMinted);
+        if (debtToCover == 0) {
+            return;
+        }
+
+        vm.startPrank(sender);
+        dsc.approve(address(dscEngine), debtToCover);
+        vm.expectRevert(DSCEngine.DSCEngine__UserNotEligibleForLiquidation.selector);
+        dscEngine.liquidate(userToBeLiquidated, address(collateral), debtToCover);
+        vm.stopPrank();
+
+        timesAttemptToLiquidateHealthyAccountCalled++;
     }
 
     function liquidate(
@@ -369,6 +410,11 @@ contract Handler is Test {
         } else {
             btcUsdPriceFeed.updateAnswer(newPrice);
         }
+    }
+
+    function _getActorFromSeed(uint256 seed) private view returns (address) {
+        uint256 index = seed % actors.length;
+        return actors[index];
     }
 
     function _recordCollateralDelta(ERC20DecimalsMock collateral, uint256 engineBalanceBefore) private {

@@ -243,6 +243,8 @@ contract DSCEngine is ReentrancyGuard {
             revert DSCEngine__HealthFactorNotImproved();
         }
         // make sure burning DSC doesn't break the liquidators health factor
+        // should be unreachable as long as liquidator has healthy HF when calling liquidate
+        // prevents unhealthy accounts from liquidating others, liquidators need HF >= 1
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -283,9 +285,11 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     /**
-     * @notice Mint DSC against deposited collateral
-     * @notice Users must have more collateral value deposited than the minimum threshold determined by their health factor
+     * @notice Mint DSC against deposited collateral. Users must have more collateral value deposited than the minimum threshold determined by their health factor
      * @param amountDscToMint The amount of decentralized stable coin to mint
+     *
+     * @dev Defensive check: some ERC20 implementations may return `false` instead of reverting on mint
+     * If `i_dsc.mint` returns false, we revert to avoid leaving state inconsistent. DSC should always return true or revert but want to be sure
      */
     function mintDsc(uint256 amountDscToMint) public nonReentrant moreThanZero(amountDscToMint) {
         s_dscMinted[msg.sender] += amountDscToMint;

@@ -7,6 +7,7 @@ import {DSCEngine, OracleLib} from "../../src/DSCEngine.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {ERC20DecimalsMock} from "../mocks/ERC20DecimalsMock.sol";
 import {ERC20NoDecimalsMock} from "../mocks/ERC20NoDecimalsMock.sol";
+import {MockDscFailingMint} from "../mocks/MockDscFailingMint.sol";
 import {MockV3Aggregator} from "../mocks/MockV3Aggregator.sol";
 import {MockV3AggregatorWithAnsweredInRound} from "../mocks/MockV3AggregatorWithAnsweredInRound.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
@@ -359,6 +360,27 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.mintDsc(DSC_MINT_AMOUNT);
     }
 
+    function testMintDscRevertsIfMintFails() external {
+        // Arrange: deploy engine with a DSC that returns false on mint
+        ERC20DecimalsMock token = new ERC20DecimalsMock("MOCK", "MOCK", 18);
+        MockV3Aggregator feed = new MockV3Aggregator(8, 2000e8);
+        MockDscFailingMint failingDsc = new MockDscFailingMint();
+
+        address[] memory tokenAddresses = new address[](1);
+        tokenAddresses[0] = address(token);
+        address[] memory priceFeedAddresses = new address[](1);
+        priceFeedAddresses[0] = address(feed);
+        DSCEngine engine = new DSCEngine(tokenAddresses, priceFeedAddresses, address(failingDsc));
+
+        token.mint(user1, STARTING_ERC20_BALANCE);
+        vm.startPrank(user1);
+        token.approve(address(engine), COLLATERAL_AMOUNT);
+        engine.depositCollateral(address(token), COLLATERAL_AMOUNT);
+        vm.expectRevert(DSCEngine.DSCEngine__MintFailed.selector);
+        engine.mintDsc(DSC_MINT_AMOUNT);
+        vm.stopPrank();
+    }
+
     /*//////////////////////////////////////////////////////////////
                     DEPOSIT COLLATERAL AND MINT DSC
     //////////////////////////////////////////////////////////////*/
@@ -557,6 +579,29 @@ contract DSCEngineTest is Test, CodeConstants {
         dscEngine.liquidate(user3, wethAddress, DSC_MINT_AMOUNT);
     }
 
+    function testLiquidateRevertsIfHealthFactorNotImproved() external skipFork usersFunded usersDeposited usersMinted {
+        // Arrange: user3 deposits and mints max, then price drops to make C/D == 1.1
+        vm.startPrank(user3);
+        weth.approve(address(dscEngine), COLLATERAL_AMOUNT);
+        dscEngine.depositCollateral(wethAddress, COLLATERAL_AMOUNT);
+        // Mint max (50% threshold)
+        (, uint256 totalValue) = dscEngine.getAccountInformation(user3);
+        uint256 amountDscToMint = (totalValue * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        dscEngine.mintDsc(amountDscToMint);
+        vm.stopPrank();
+
+        // Set price to 55% so C/D == 1.1
+        int256 newPrice = (MOCK_ETH_USD_PRICE * 55) / 100;
+        MockV3Aggregator(ethUsdPriceFeed).updateAnswer(newPrice);
+
+        // Approve DSC and attempt to liquidate
+        vm.startPrank(user1);
+        dsc.approve(address(dscEngine), DSC_MINT_AMOUNT);
+        vm.expectRevert(DSCEngine.DSCEngine__HealthFactorNotImproved.selector);
+        dscEngine.liquidate(user3, wethAddress, DSC_MINT_AMOUNT);
+        vm.stopPrank();
+    }
+
     // ToDo:
     // // not sure how to induce this error. need to figure out how paying someone elses debt can break your health factor
     // function testLiquidateFailsIfLiquidationBreaksLiquidatorsHealthFactor()
@@ -662,8 +707,7 @@ contract DSCEngineTest is Test, CodeConstants {
         uint256 tokenAmountFromLiquidation = dscEngine.getTokenAmountFromUsd(wethAddress, DSC_MINT_AMOUNT);
         uint256 expectedLiquidationProceeds =
             tokenAmountFromLiquidation + ((tokenAmountFromLiquidation * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION);
-        uint256 expectedBonus =
-            (tokenAmountFromLiquidation * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
+        uint256 expectedBonus = (tokenAmountFromLiquidation * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
         vm.prank(user1);
         dsc.approve(address(dscEngine), DSC_MINT_AMOUNT);
         vm.expectEmit(true, true, true, true, address(dscEngine));

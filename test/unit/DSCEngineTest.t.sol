@@ -602,18 +602,43 @@ contract DSCEngineTest is Test, CodeConstants {
         vm.stopPrank();
     }
 
-    // ToDo:
-    // // not sure how to induce this error. need to figure out how paying someone elses debt can break your health factor
-    // function testLiquidateFailsIfLiquidationBreaksLiquidatorsHealthFactor()
-    //     external
-    //     usersFunded
-    //     usersDeposited
-    //     usersMinted
-    // {
-    //     vm.prank(user1);
-    //     vm.expectRevert(DSCEngine.DSCEngine__BreaksHealthFactor.selector);
-    //     dscEngine.liquidate(user2, wethAddress, DSC_MINT_AMOUNT);
-    // }
+    function testLiquidateFailsIfLiquidatorHasBrokenHealthFactor() external skipFork usersFunded {
+        // Arrange: user1 (liquidator) mints max, user3 mints less than max
+        vm.startPrank(user1);
+        weth.approve(address(dscEngine), COLLATERAL_AMOUNT);
+        dscEngine.depositCollateral(wethAddress, COLLATERAL_AMOUNT);
+        (, uint256 user1TotalValue) = dscEngine.getAccountInformation(user1);
+        uint256 user1MaxMint = (user1TotalValue * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        dscEngine.mintDsc(user1MaxMint);
+        vm.stopPrank();
+
+        vm.startPrank(user3);
+        weth.approve(address(dscEngine), COLLATERAL_AMOUNT);
+        dscEngine.depositCollateral(wethAddress, COLLATERAL_AMOUNT);
+        (, uint256 user3TotalValue) = dscEngine.getAccountInformation(user3);
+        uint256 user3MaxMint = (user3TotalValue * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        dscEngine.mintDsc((user3MaxMint * 80) / 100);
+        vm.stopPrank();
+
+        // Drop price enough to make both unhealthy, but keep user3 liquidation valid
+        int256 newPrice = (MOCK_ETH_USD_PRICE * 60) / 100;
+        MockV3Aggregator(ethUsdPriceFeed).updateAnswer(newPrice);
+        assertLt(dscEngine.getHealthFactor(user3), MIN_HEALTH_FACTOR);
+
+        uint256 debtToCover = user1MaxMint / 10;
+        if (debtToCover == 0) {
+            debtToCover = 1;
+        }
+
+        // expected liquidator HF after liquidation
+        uint256 expectedHealthFactor = dscEngine.getHealthFactor(user1);
+
+        vm.startPrank(user1);
+        dsc.approve(address(dscEngine), debtToCover);
+        vm.expectRevert(abi.encodeWithSelector(DSCEngine.DSCEngine__BreaksHealthFactor.selector, expectedHealthFactor));
+        dscEngine.liquidate(user3, wethAddress, debtToCover);
+        vm.stopPrank();
+    }
 
     function testLiquidateWithUint256MaxFailsIfUserToBeLiquidatedHasZeroDscMinted()
         external

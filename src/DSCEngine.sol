@@ -6,6 +6,8 @@ import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 import {OracleLib} from "./libraries/OracleLib.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
@@ -35,20 +37,25 @@ contract DSCEngine is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     error DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
+    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DSCEngine__DebtToCoverExceedsCollateralDeposited();
+    error DSCEngine__DebtToCoverExceedsDscMinted();
     error DSCEngine__AmountMustBeMoreThanZero();
     error DSCEngine__NotApprovedToken();
-    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
-    error DSCEngine__TransferFailed();
     error DSCEngine__MintFailed();
     error DSCEngine__UserNotEligibleForLiquidation();
     error DSCEngine__HealthFactorNotImproved();
     error DSCEngine__InvalidPriceFeedOrTokenAddress();
+    error DSCEngine__InvalidTokenDecimals();
+    error DSCEngine__TokenDoesNotImplementDecimals();
+    error DSCEngine__DuplicateCollateralToken();
 
     /*//////////////////////////////////////////////////////////////
                            TYPE DECLARATIONS
     //////////////////////////////////////////////////////////////*/
 
     using OracleLib for AggregatorV3Interface;
+    using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
@@ -64,6 +71,8 @@ contract DSCEngine is ReentrancyGuard {
     uint256 private constant LIQUIDATION_PRECISION = 100;
 
     mapping(address token => address priceFeed) private s_priceFeeds;
+    mapping(address token => uint8 decimals) private s_tokenDecimals;
+    mapping(address token => bool isRegistered) private s_isCollateralToken;
     mapping(address user => uint256 amountDscMinted) private s_dscMinted;
     mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited;
     address[] private s_collateralTokens;
@@ -102,17 +111,35 @@ contract DSCEngine is ReentrancyGuard {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /**
+     * @dev Collateral tokens are assumed to be standard ERC20s without transfer fees or rebasing.
+     * Fee-on-transfer and rebasing tokens can break accounting and are not supported.
+     */
     constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses, address dscAddress) {
         uint256 tokenAddressesLength = tokenAddresses.length;
         if (tokenAddressesLength != priceFeedAddresses.length) {
             revert DSCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
         }
         for (uint256 i = 0; i < tokenAddressesLength; i++) {
+            if (s_isCollateralToken[tokenAddresses[i]]) {
+                revert DSCEngine__DuplicateCollateralToken();
+            }
             if (tokenAddresses[i] == address(0) || priceFeedAddresses[i] == address(0)) {
                 revert DSCEngine__InvalidPriceFeedOrTokenAddress();
             }
+            uint8 tokenDecimals;
+            try IERC20Metadata(tokenAddresses[i]).decimals() returns (uint8 decimals) {
+                tokenDecimals = decimals;
+            } catch {
+                revert DSCEngine__TokenDoesNotImplementDecimals();
+            }
+            if (tokenDecimals > 18) {
+                revert DSCEngine__InvalidTokenDecimals();
+            }
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
+            s_tokenDecimals[tokenAddresses[i]] = tokenDecimals;
             s_collateralTokens.push(tokenAddresses[i]);
+            s_isCollateralToken[tokenAddresses[i]] = true;
         }
         i_dsc = DecentralizedStableCoin(dscAddress);
     }
@@ -175,14 +202,36 @@ contract DSCEngine is ReentrancyGuard {
         if (startingUserHealthFactor >= MIN_HEALTH_FACTOR) {
             revert DSCEngine__UserNotEligibleForLiquidation();
         }
+        // get user info needed for checks
+        (uint256 dscMinted,) = _getAccountInformation(userToBeLiquidated);
+        uint256 totalDepositedCollateral = s_collateralDeposited[userToBeLiquidated][collateralTokenAddress];
+        // get USD value
+        uint256 totalDepositedCollateralUsdValue = getUsdValue(collateralTokenAddress, totalDepositedCollateral);
+        // if max is selected then set appropriate debtToCover
         if (debtToCover == type(uint256).max) {
-            (uint256 dscMinted,) = _getAccountInformation(userToBeLiquidated);
-            debtToCover = dscMinted;
+            // calculate the minimum amount of debtToCover to fully liquidate users collateral of this type and still get full 10% bonus
+            uint256 dscNeededToFullyLiquidateWithBonus =
+                totalDepositedCollateralUsdValue * (LIQUIDATION_PRECISION - LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
+            debtToCover =
+                dscNeededToFullyLiquidateWithBonus > dscMinted ? dscMinted : dscNeededToFullyLiquidateWithBonus;
+        }
+        if (debtToCover > dscMinted) {
+            revert DSCEngine__DebtToCoverExceedsDscMinted();
         }
         // calculate amount collateral + liquidation bonus to send liquidator
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralTokenAddress, debtToCover);
+        if (tokenAmountFromDebtCovered > totalDepositedCollateral) {
+            revert DSCEngine__DebtToCoverExceedsCollateralDeposited();
+        }
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
         uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+        // If user has more collateral value than debtToCover but less than enough to pay full 10% bonus, adjust bonus amount down to whats available
+        if (tokenAmountFromDebtCovered < totalDepositedCollateral && totalCollateralToRedeem > totalDepositedCollateral)
+        {
+            // update amounts after cap is applied
+            totalCollateralToRedeem = totalDepositedCollateral;
+            bonusCollateral = totalCollateralToRedeem - tokenAmountFromDebtCovered;
+        }
         // emit liquidation event
         emit UserLiquidated(userToBeLiquidated, msg.sender, collateralTokenAddress, debtToCover, bonusCollateral);
         // redeem the liquidated collateral and burn DSC
@@ -194,6 +243,8 @@ contract DSCEngine is ReentrancyGuard {
             revert DSCEngine__HealthFactorNotImproved();
         }
         // make sure burning DSC doesn't break the liquidators health factor
+        // should be unreachable as long as liquidator has healthy HF when calling liquidate
+        // prevents unhealthy accounts from liquidating others, liquidators need HF >= 1
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -213,10 +264,7 @@ contract DSCEngine is ReentrancyGuard {
     {
         s_collateralDeposited[msg.sender][collateralTokenAddress] += amountCollateral;
         emit CollateralDeposited(msg.sender, collateralTokenAddress, amountCollateral);
-        bool success = IERC20(collateralTokenAddress).transferFrom(msg.sender, address(this), amountCollateral);
-        if (!success) {
-            revert DSCEngine__TransferFailed();
-        }
+        IERC20(collateralTokenAddress).safeTransferFrom(msg.sender, address(this), amountCollateral);
     }
 
     /**
@@ -237,9 +285,11 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     /**
-     * @notice Mint DSC against deposited collateral
-     * @notice Users must have more collateral value deposited than the minimum threshold determined by their health factor
+     * @notice Mint DSC against deposited collateral. Users must have more collateral value deposited than the minimum threshold determined by their health factor
      * @param amountDscToMint The amount of decentralized stable coin to mint
+     *
+     * @dev Defensive check: some ERC20 implementations may return `false` instead of reverting on mint
+     * If `i_dsc.mint` returns false, we revert to avoid leaving state inconsistent. DSC should always return true or revert but want to be sure
      */
     function mintDsc(uint256 amountDscToMint) public nonReentrant moreThanZero(amountDscToMint) {
         s_dscMinted[msg.sender] += amountDscToMint;
@@ -269,10 +319,7 @@ contract DSCEngine is ReentrancyGuard {
      */
     function _burnDsc(uint256 amountDscToBurn, address onBehalfOf, address dscFrom) private {
         s_dscMinted[onBehalfOf] -= amountDscToBurn;
-        bool success = i_dsc.transferFrom(dscFrom, address(this), amountDscToBurn);
-        if (!success) {
-            revert DSCEngine__TransferFailed();
-        }
+        IERC20(address(i_dsc)).safeTransferFrom(dscFrom, address(this), amountDscToBurn);
         i_dsc.burn(amountDscToBurn);
     }
 
@@ -290,10 +337,7 @@ contract DSCEngine is ReentrancyGuard {
     {
         s_collateralDeposited[redeemedFrom][collateralTokenAddress] -= amountCollateral;
         emit CollateralRedeemed(redeemedFrom, redeemedTo, collateralTokenAddress, amountCollateral);
-        bool success = IERC20(collateralTokenAddress).transfer(redeemedTo, amountCollateral);
-        if (!success) {
-            revert DSCEngine__TransferFailed();
-        }
+        IERC20(collateralTokenAddress).safeTransfer(redeemedTo, amountCollateral);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -328,6 +372,10 @@ contract DSCEngine is ReentrancyGuard {
         if (amount <= 0) {
             revert DSCEngine__AmountMustBeMoreThanZero();
         }
+    }
+
+    function _getTokenPrecision(address token) private view returns (uint256) {
+        return 10 ** uint256(s_tokenDecimals[token]);
     }
 
     function _revertIfHealthFactorIsBroken(address user) internal view {
@@ -415,6 +463,15 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     /**
+     * @notice Gets the stored number of decimals for a supported collateral token
+     * @param token address of collateral token
+     * @return number of decimals
+     */
+    function getCollateralTokenDecimals(address token) external view returns (uint8) {
+        return s_tokenDecimals[token];
+    }
+
+    /**
      * @notice Gets address of DSC token contract
      * @return Token address
      */
@@ -492,6 +549,11 @@ contract DSCEngine is ReentrancyGuard {
      * @param collateralTokenAddress Address of collateral token
      * @param amountUsdInWei Amount of USD with 18 decimals (1e18 = $1)
      * @return Amount of collateral tokens equivalent in value to the given USD amount
+     *
+     * @dev Unit conventions:
+     * - USD values are 18 decimals.
+     * - Token amounts are in each token's native decimals.
+     * - Chainlink price feeds are 8 decimals and are scaled to 18 for USD math.
      */
     function getTokenAmountFromUsd(
         address collateralTokenAddress,
@@ -503,7 +565,9 @@ contract DSCEngine is ReentrancyGuard {
     {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[collateralTokenAddress]);
         (, int256 price,,,) = priceFeed.stalePriceFeedCheckLatestRoundData();
-        return (amountUsdInWei * PRECISION) / (uint256(price) * ADDITIONAL_PRICE_FEED_PRECISION);
+        // USD is 18 decimals. Convert USD -> token units by multiplying by token precision, then divide by price(18d).
+        uint256 tokenPrecision = _getTokenPrecision(collateralTokenAddress);
+        return (amountUsdInWei * tokenPrecision) / (uint256(price) * ADDITIONAL_PRICE_FEED_PRECISION);
     }
 
     /**
@@ -526,17 +590,19 @@ contract DSCEngine is ReentrancyGuard {
      * @param token address of the token
      * @param amount amount of the token
      * @return USD value of the given amount of the token
+     *
+     * @dev Unit conventions:
+     * - USD values are 18 decimals.
+     * - Token amounts are in each token's native decimals.
+     * - Chainlink price feeds are 8 decimals and are scaled to 18 for USD math.
      */
     function getUsdValue(address token, uint256 amount) public view returns (uint256) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price,,,) = priceFeed.stalePriceFeedCheckLatestRoundData();
-        // 1 eth = $1000
-        // the returned value from chainlink will be 1000 * 1e8
-        // need to change price to uint256 and get correct decimals before continuing
-        // (1000 * 1e8) * 1e10
+        // Chainlink price feeds are 8 decimals; scale to 18 for USD math.
         uint256 priceWithAdditionalPrecision = uint256(price) * ADDITIONAL_PRICE_FEED_PRECISION;
-        // divide by 1e18 after multiplying by amount to get final value
-        // (priceWithAdditionalPrecision * amount) / 1e18
-        return (priceWithAdditionalPrecision * amount) / PRECISION;
+        // Token amounts are in native decimals; divide by token precision to get 18d USD value.
+        uint256 tokenPrecision = _getTokenPrecision(token);
+        return (priceWithAdditionalPrecision * amount) / tokenPrecision;
     }
 }

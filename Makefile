@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: all clean remove install build test snapshot coverage coverage-report gas-report anvil deploy
+.PHONY: all clean remove install build test snapshot coverage coverage-report gas-report anvil deploy demo
 
 DEFAULT_ANVIL_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
@@ -57,3 +57,5 @@ endif
 deploy:
 	@forge script script/DeployDSC.s.sol:DeployDSC $(NETWORK_ARGS)
 
+demo:
+	@forge script script/Interactions.s.sol $(NETWORK_ARGS)

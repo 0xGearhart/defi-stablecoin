@@ -36,13 +36,14 @@ contract InvariantTest is StdInvariant, Test {
         // using a handler makes it less random but gives us more valid calls
         targetContract(address(handler));
 
-        bytes4[] memory selectors = new bytes4[](6);
+        bytes4[] memory selectors = new bytes4[](7);
         selectors[0] = Handler.depositCollateral.selector;
         selectors[1] = Handler.redeemCollateral.selector;
         selectors[2] = Handler.mintDsc.selector;
         selectors[3] = Handler.burnDsc.selector;
         selectors[4] = Handler.depositCollateralAndMintDsc.selector;
         selectors[5] = Handler.redeemCollateralForDsc.selector;
+        selectors[6] = handler.attemptToLiquidateHealthyAccount.selector;
 
         targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
     }
@@ -68,6 +69,10 @@ contract InvariantTest is StdInvariant, Test {
         console2.log("Times Liquidate Called Successfully: : ", handler.timesLiquidateCalled());
         console2.log("Times DepositAndMint Called Successfully: : ", handler.timesDepositAndMintCalled());
         console2.log("Times RedeemAndBurn Called Successfully: : ", handler.timesRedeemAndBurnCalled());
+        console2.log(
+            "Times AttemptToLiquidateHealthyAccount Called Successfully: : ",
+            handler.timesAttemptToLiquidateHealthyAccountCalled()
+        );
 
         // compare value to the total amount of DSC minted
         assert(totalDepositedValue >= totalDscSupply);
@@ -162,7 +167,4 @@ contract InvariantTest is StdInvariant, Test {
 
 //     // ToDo: finish this invariant
 //     function invariant_accountsWithBrokenHealthFactorsCanBeLiquidated() public view {}
-
-//     // ToDo: finish this invariant
-//     function invariant_accountsWithGoodHealthFactorsCanNotBeLiquidated() public view {}
 // }

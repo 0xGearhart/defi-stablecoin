@@ -233,7 +233,6 @@ contract DSCEngine is ReentrancyGuard {
             bonusCollateral = totalCollateralToRedeem - tokenAmountFromDebtCovered;
         }
         // emit liquidation event
-        // ToDo: write test to verify event is emitted as expected
         emit UserLiquidated(userToBeLiquidated, msg.sender, collateralTokenAddress, debtToCover, bonusCollateral);
         // redeem the liquidated collateral and burn DSC
         _redeemCollateral(userToBeLiquidated, msg.sender, collateralTokenAddress, totalCollateralToRedeem);

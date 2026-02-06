@@ -325,10 +325,10 @@ cast call <DSC_ENGINE_ADDRESS> "getCollateralValueInUsd(address,address)" <USER_
 
 | Network     | Contract                | Address                                      | Explorer                                          |
 | ----------- | ----------------------- | -------------------------------------------- | ------------------------------------------------- |
-| Arb Sepolia | DSCEngine               | `0xd560D60d441A2351a093Ab200CD967723b8b2e15` | [View on Arbiscan](https://sepolia.arbiscan.io)   |
-| Arb Sepolia | DecentralizedStableCoin | `0x6b755b42725F6239aa09Baa7fb971Ef92344b6D9` | [View on Arbiscan](https://sepolia.arbiscan.io)   |
-| Eth Sepolia | DSCEngine               | `TBD`                                        | [View on Etherscan](https://sepolia.etherscan.io) |
-| Eth Sepolia | DecentralizedStableCoin | `TBD`                                        | [View on Etherscan](https://sepolia.etherscan.io) |
+| Arb Sepolia | DSCEngine               | `0xF8AbA0E0B85d0761543F7aF28c3f70c08E1a061b` | [View on Arbiscan](https://sepolia.arbiscan.io)   |
+| Arb Sepolia | DecentralizedStableCoin | `0xFB640e9b0b6117F065eECadB81F14681259BFF68` | [View on Arbiscan](https://sepolia.arbiscan.io)   |
+| Eth Sepolia | DSCEngine               | `0x2f0701fc6C62fC61D5b17c2edbB8Db202a6caaAE` | [View on Etherscan](https://sepolia.etherscan.io) |
+| Eth Sepolia | DecentralizedStableCoin | `0x2DBfFF9dFced50979aE09cf799aEf1305a0496a0` | [View on Etherscan](https://sepolia.etherscan.io) |
 
 ## Security
 

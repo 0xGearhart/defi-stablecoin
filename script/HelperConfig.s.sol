@@ -3,7 +3,7 @@ pragma solidity 0.8.33;
 
 import {ERC20DecimalsMock} from "../test/mocks/ERC20DecimalsMock.sol";
 import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
-import {Script} from "forge-std/Script.sol";
+import {Script, console2} from "forge-std/Script.sol";
 
 abstract contract CodeConstants {
     // DSC name and symbol
@@ -20,9 +20,9 @@ abstract contract CodeConstants {
 
     // eth sepolia chain id and info
     uint256 public constant ETH_SEPOLIA_CHAIN_ID = 11_155_111;
-    address public constant WETH_ETH_SEPOLIA_ADDRESS = 0xdd13E55209Fd76AfE204dBda4007C227904f0a81;
+    address public constant WETH_ETH_SEPOLIA_ADDRESS = 0x682E34F27ED95d9De286A1Aec6e5fc12263D7b41;
     address public constant WETH_ETH_SEPOLIA_PRICE_FEED_ADDRESS = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
-    address public constant WBTC_ETH_SEPOLIA_ADDRESS = 0x7079A35DAAa3fEc63F52496CAbBFac0f9D5beB28;
+    address public constant WBTC_ETH_SEPOLIA_ADDRESS = 0x0DF8f112b404B6CB9D457E69178d5a3461623c12;
     // WBTC price feed is actually BTC price feed since WBTC is not available. This creates de-peg risk that could leave the protocol with overvalued WBTC and bad debt in the event of a de-peg
     address public constant WBTC_ETH_SEPOLIA_PRICE_FEED_ADDRESS = 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43;
 
@@ -36,9 +36,9 @@ abstract contract CodeConstants {
 
     // arb sepolia chain id and info
     uint256 public constant ARB_SEPOLIA_CHAIN_ID = 421_614;
-    address public constant WETH_ARB_SEPOLIA_ADDRESS = 0x980B62Da83eFf3D4576C647993b0c1D7faf17c73;
+    address public constant WETH_ARB_SEPOLIA_ADDRESS = 0x2d028ec7Dcc6A860eBaf2FB891020F54cDCb08aD;
     address public constant WETH_ARB_SEPOLIA_PRICE_FEED_ADDRESS = 0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165;
-    address public constant WBTC_ARB_SEPOLIA_ADDRESS = 0x57A618Ab6e7abDdCD9A417F078d1958099DaC8b6;
+    address public constant WBTC_ARB_SEPOLIA_ADDRESS = 0x020Fe7D5f2Fe5d39f252d1DF106D22677584a28a;
     // WBTC price feed is actually BTC price feed since WBTC is not available. This creates de-peg risk that could leave the protocol with overvalued WBTC and bad debt in the event of a de-peg
     address public constant WBTC_ARB_SEPOLIA_PRICE_FEED_ADDRESS = 0x56a43EB56Da12C0dc1D972ACb089c06a5dEF8e69;
 

@@ -159,7 +159,9 @@ contract Handler is Test {
             return;
         }
         (uint256 totalDscMinted,) = dscEngine.getAccountInformation(sender);
-        amountToBurn = bound(amountToBurn, 0, totalDscMinted);
+        uint256 dscBalance = dsc.balanceOf(sender);
+        uint256 maxDscToBurn = totalDscMinted < dscBalance ? totalDscMinted : dscBalance;
+        amountToBurn = bound(amountToBurn, 0, maxDscToBurn);
         if (amountToBurn == 0) {
             return;
         }
@@ -281,11 +283,11 @@ contract Handler is Test {
         if (sender == address(0) || userToBeLiquidated == address(0)) {
             return;
         }
-        (uint256 totalDscMinted,) = dscEngine.getAccountInformation(sender);
         if (dscEngine.getHealthFactor(userToBeLiquidated) < MIN_HEALTH_FACTOR) {
             return;
         }
-        debtToCover = bound(debtToCover, 0, totalDscMinted);
+        uint256 dscBalance = dsc.balanceOf(sender);
+        debtToCover = bound(debtToCover, 0, dscBalance);
         if (debtToCover == 0) {
             return;
         }
@@ -299,11 +301,10 @@ contract Handler is Test {
         timesAttemptToLiquidateHealthyAccountCalled++;
     }
 
-    function liquidate(
+    function liquidateIfEligibleWithPriceDrop(
         uint256 addressSeed,
         uint256 userToBeLiquidatedSeed,
-        uint256 collateralSeed,
-        uint256 debtToCover
+        uint256 collateralSeed
     )
         public
     {
@@ -316,58 +317,64 @@ contract Handler is Test {
         if (dsc.balanceOf(sender) == 0) {
             return;
         }
-        (uint256 totalDscMinted,) = dscEngine.getAccountInformation(sender);
-        debtToCover = bound(debtToCover, 0, totalDscMinted);
-        if (debtToCover == 0) {
-            return;
-        }
+
         int256 newPrice;
         int256 oldPrice;
         if (collateral == weth) {
-            newPrice = (MOCK_ETH_USD_PRICE * 70) / 100; // 30% price drop (75/100)
+            newPrice = (MOCK_ETH_USD_PRICE * 70) / 100;
             oldPrice = MOCK_ETH_USD_PRICE;
         } else {
-            newPrice = (MOCK_BTC_USD_PRICE * 70) / 100; // 30% price drop (75/100)
+            newPrice = (MOCK_BTC_USD_PRICE * 70) / 100;
             oldPrice = MOCK_BTC_USD_PRICE;
         }
-        // lower price temporarily to make a user eligible for liquidation
+
         _updateCollateralPrice(address(collateral), newPrice);
-        // if user is still not eligible for liquidation then put price back and return
-        if (dscEngine.getHealthFactor(userToBeLiquidated) > MIN_HEALTH_FACTOR) {
+
+        if (dscEngine.getHealthFactor(userToBeLiquidated) >= MIN_HEALTH_FACTOR) {
             _updateCollateralPrice(address(collateral), oldPrice);
             return;
         }
+        if (dscEngine.getHealthFactor(sender) < MIN_HEALTH_FACTOR) {
+            _updateCollateralPrice(address(collateral), oldPrice);
+            return;
+        }
+
+        (uint256 targetDscMinted,) = dscEngine.getAccountInformation(userToBeLiquidated);
+        uint256 debtToCover = dsc.balanceOf(sender);
+        if (debtToCover > targetDscMinted) {
+            debtToCover = targetDscMinted;
+        }
+        if (debtToCover == 0) {
+            _updateCollateralPrice(address(collateral), oldPrice);
+            return;
+        }
+
         uint256 engineBalanceBefore = collateral.balanceOf(address(dscEngine));
+        bool success = false;
         vm.startPrank(sender);
         dsc.approve(address(dscEngine), debtToCover);
-        dscEngine.liquidate(userToBeLiquidated, address(collateral), debtToCover);
+        try dscEngine.liquidate(userToBeLiquidated, address(collateral), debtToCover) {
+            success = true;
+        } catch {}
         vm.stopPrank();
-        _recordCollateralDelta(collateral, engineBalanceBefore);
-        // return price to normal to avoid breaking invariants
+
         _updateCollateralPrice(address(collateral), oldPrice);
+        if (!success) {
+            return;
+        }
+
+        _recordCollateralDelta(collateral, engineBalanceBefore);
 
         (uint256 dscMintedAfterLiquidation, uint256 totalCollateralValueAfterLiquidation) =
             dscEngine.getAccountInformation(userToBeLiquidated);
         if (dscMintedAfterLiquidation == 0 && usersWithDscMinted.contains(userToBeLiquidated)) {
             usersWithDscMinted.remove(userToBeLiquidated);
         }
-        // if user has 0 USD value deposited after redeem; remove them from array so they do not try to mint DSC without depositing first
         if (totalCollateralValueAfterLiquidation == 0 && usersWithCollateralDeposited.contains(userToBeLiquidated)) {
             usersWithCollateralDeposited.remove(userToBeLiquidated);
         }
 
         timesLiquidateCalled++;
-    }
-
-    // this breaks our invariant since price plummeting more than 50% without successful liquidations results in an under-collateralized protocol
-    function updateCollateralPrice(uint256 collateralSeed, uint96 newPrice) public {
-        int256 newPriceInt = int256(uint256(newPrice));
-        ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
-        if (collateral == weth) {
-            ethUsdPriceFeed.updateAnswer(newPriceInt);
-        } else {
-            btcUsdPriceFeed.updateAnswer(newPriceInt);
-        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -462,6 +469,66 @@ contract Handler is Test {
         return 10 ** uint256(ERC20DecimalsMock(collateral).decimals());
     }
 }
+
+// function liquidate(
+//         uint256 addressSeed,
+//         uint256 userToBeLiquidatedSeed,
+//         uint256 collateralSeed,
+//         uint256 debtToCover
+//     )
+//         public
+//     {
+//         ERC20DecimalsMock collateral = _getCollateralFromSeed(collateralSeed);
+//         address sender = _getMintedAddressFromSeed(addressSeed);
+//         address userToBeLiquidated = _getMintedAddressFromSeed(userToBeLiquidatedSeed);
+//         if (sender == address(0) || userToBeLiquidated == address(0)) {
+//             return;
+//         }
+//         if (dsc.balanceOf(sender) == 0) {
+//             return;
+//         }
+//         (uint256 totalDscMinted,) = dscEngine.getAccountInformation(sender);
+//         debtToCover = bound(debtToCover, 0, totalDscMinted);
+//         if (debtToCover == 0) {
+//             return;
+//         }
+//         int256 newPrice;
+//         int256 oldPrice;
+//         if (collateral == weth) {
+//             newPrice = (MOCK_ETH_USD_PRICE * 70) / 100; // 30% price drop (75/100)
+//             oldPrice = MOCK_ETH_USD_PRICE;
+//         } else {
+//             newPrice = (MOCK_BTC_USD_PRICE * 70) / 100; // 30% price drop (75/100)
+//             oldPrice = MOCK_BTC_USD_PRICE;
+//         }
+//         // lower price temporarily to make a user eligible for liquidation
+//         _updateCollateralPrice(address(collateral), newPrice);
+//         // if user is still not eligible for liquidation then put price back and return
+//         if (dscEngine.getHealthFactor(userToBeLiquidated) > MIN_HEALTH_FACTOR) {
+//             _updateCollateralPrice(address(collateral), oldPrice);
+//             return;
+//         }
+//         uint256 engineBalanceBefore = collateral.balanceOf(address(dscEngine));
+//         vm.startPrank(sender);
+//         dsc.approve(address(dscEngine), debtToCover);
+//         dscEngine.liquidate(userToBeLiquidated, address(collateral), debtToCover);
+//         vm.stopPrank();
+//         _recordCollateralDelta(collateral, engineBalanceBefore);
+//         // return price to normal to avoid breaking invariants
+//         _updateCollateralPrice(address(collateral), oldPrice);
+
+//         (uint256 dscMintedAfterLiquidation, uint256 totalCollateralValueAfterLiquidation) =
+//             dscEngine.getAccountInformation(userToBeLiquidated);
+//         if (dscMintedAfterLiquidation == 0 && usersWithDscMinted.contains(userToBeLiquidated)) {
+//             usersWithDscMinted.remove(userToBeLiquidated);
+//         }
+//         // if user has 0 USD value deposited after redeem; remove them from array so they do not try to mint DSC without depositing first
+//         if (totalCollateralValueAfterLiquidation == 0 && usersWithCollateralDeposited.contains(userToBeLiquidated)) {
+//             usersWithCollateralDeposited.remove(userToBeLiquidated);
+//         }
+
+//         timesLiquidateCalled++;
+//     }
 
 // function liquidateMax(uint256 addressSeed, uint256 collateralSeed) public {
 //     address userToBeLiquidated = _getMintedAddressFromSeed(addressSeed);

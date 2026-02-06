@@ -70,7 +70,7 @@ healthFactor = (collateralValueInUsd * LIQUIDATION_THRESHOLD / 100) * 1e18 / tot
 1. Liquidator calls `liquidate(userAddress, collateralToken, debtAmount)`
 2. System verifies user has broken health factor (< 1.0)
 3. Liquidator provides DSC to pay off part of user's debt
-4. User's collateral (+ 10% bonus) is transferred to liquidator
+4. User's collateral (+ up to 10% bonus) is transferred to liquidator
 5. User's health factor must improve after liquidation
 6. Liquidator's own health factor must not break after receiving collateral
 
@@ -355,7 +355,8 @@ For production use, consider:
 - **Centralized Price Feeds**: System relies on Chainlink price feeds; oracle failure will impact system stability
 - **Fixed Collateral Types**: Currently limited to wETH and wBTC; adding new collateral requires contract updates
 - **No Governance**: All protocol parameters are immutable; no governance mechanism for protocol upgrades
-- **Liquidation Incentives**: Fixed liquidation bonus; no dynamic incentive adjustment based on market conditions
+- **Liquidation Incentives**: Max 10% liquidation bonus; effective bonus can be lower if collateral is insufficient. No market-based dynamic incentive adjustment.
+- **Non-Standard Tokens**: Fee-on-transfer or rebasing collateral tokens are not supported
 - **No Flash Loan Protection**: Potential vulnerability to flash loan attacks (educational project)
 
 **Centralization Risks:**

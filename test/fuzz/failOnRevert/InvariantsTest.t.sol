@@ -85,12 +85,20 @@ contract InvariantTest is StdInvariant, Test {
         assertEq(totalWbtcDeposits, totalWbtcBalance);
     }
 
-    // ToDo: finish this invariant
     function invariant_userShouldNeverWithdrawMoreThanWhatTheyDeposit() public view {
-        // ToDo: get deposits and withdraws from handler address and run asserts to verify invariant
+        uint256 userCount = handler.getUsersEverDepositedCount();
+        address[] memory collateralTokens = dscEngine.getCollateralTokenAddresses();
+        for (uint256 i = 0; i < userCount; i++) {
+            address user = handler.getUsersEverDepositedAt(i);
+            for (uint256 j = 0; j < collateralTokens.length; j++) {
+                address collateral = collateralTokens[j];
+                uint256 deposited = handler.userDeposits(user, collateral);
+                uint256 withdrawn = handler.userWithdrawals(user, collateral);
+                assert(withdrawn <= deposited);
+            }
+        }
     }
 
-    // ToDo: get variables from handler contract so all view functions can be uncommented and included
     function invariant_gettersShouldNeverRevert() public view {
         dscEngine.getCollateralTokenAddresses();
         dscEngine.getMinHealthFactor();
@@ -99,13 +107,25 @@ contract InvariantTest is StdInvariant, Test {
         dscEngine.getLiquidationBonus();
         dscEngine.getLiquidationThreshold();
         dscEngine.getLiquidationPrecision();
-        // dscEngine.getAccountInformation(address);
-        // dscEngine.getHealthFactor(address);
-        // dscEngine.getPriceFeedAddress(address);
-        // dscEngine.getAccountCollateralBalance(address, uint256);
-        // dscEngine.getTokenAmountFromUsd(address, uint256);
-        // dscEngine.getAccountCollateralValueInUsd(address);
-        // dscEngine.getUsdValue(address, uint256);
+        address[] memory collateralTokens = dscEngine.getCollateralTokenAddresses();
+        for (uint256 i = 0; i < collateralTokens.length; i++) {
+            address collateral = collateralTokens[i];
+            dscEngine.getPriceFeedAddress(collateral);
+            uint256 tokenUnit = handler.getTokenUnit(collateral);
+            dscEngine.getUsdValue(collateral, tokenUnit);
+            dscEngine.getTokenAmountFromUsd(collateral, 1e18);
+        }
+
+        uint256 depositedCount = handler.getUsersWithCollateralDepositedCount();
+        for (uint256 i = 0; i < depositedCount; i++) {
+            address user = handler.getUsersWithCollateralDepositedAt(i);
+            dscEngine.getAccountInformation(user);
+            dscEngine.getHealthFactor(user);
+            dscEngine.getAccountCollateralValueInUsd(user);
+            for (uint256 j = 0; j < collateralTokens.length; j++) {
+                dscEngine.getAccountCollateralBalance(user, collateralTokens[j]);
+            }
+        }
     }
 }
 

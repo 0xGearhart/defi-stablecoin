@@ -33,8 +33,11 @@ contract Handler is Test {
     uint256 public timesRedeemAndBurnCalled;
     EnumerableSet.AddressSet internal usersWithCollateralDeposited;
     EnumerableSet.AddressSet internal usersWithDscMinted;
+    EnumerableSet.AddressSet internal usersEverDeposited;
 
     mapping(address collateral => uint256 amount) public totalDeposits;
+    mapping(address user => mapping(address collateral => uint256 amount)) public userDeposits;
+    mapping(address user => mapping(address collateral => uint256 amount)) public userWithdrawals;
 
     // use uint96 max to avoid overflow and math issues related to using uint256 max.
     uint256 constant MAX_DEPOSIT_SIZE = type(uint96).max;
@@ -65,9 +68,13 @@ contract Handler is Test {
         dscEngine.depositCollateral(address(collateral), amountCollateral);
         vm.stopPrank();
         _recordCollateralDelta(collateral, engineBalanceBefore);
+        _recordUserDeposit(msg.sender, address(collateral), amountCollateral);
         // if new deposit, add to array of addresses that can call mintDsc
         if (!usersWithCollateralDeposited.contains(msg.sender)) {
             usersWithCollateralDeposited.add(msg.sender);
+        }
+        if (!usersEverDeposited.contains(msg.sender)) {
+            usersEverDeposited.add(msg.sender);
         }
         timesDepositCalled++;
     }
@@ -104,6 +111,7 @@ contract Handler is Test {
         vm.prank(sender);
         dscEngine.redeemCollateral(address(collateral), amountCollateral);
         _recordCollateralDelta(collateral, engineBalanceBefore);
+        _recordUserWithdrawal(sender, address(collateral), amountCollateral);
         // if user has 0 USD value deposited after redeem; remove them from array so they do not try to mint DSC without depositing first
         (, uint256 totalCollateralValueAfterRedemption) = dscEngine.getAccountInformation(sender);
         if (totalCollateralValueAfterRedemption == 0 && usersWithCollateralDeposited.contains(sender)) {
@@ -182,9 +190,13 @@ contract Handler is Test {
         dscEngine.depositCollateralAndMintDsc(address(collateral), amountCollateral, amountDscToMint);
         vm.stopPrank();
         _recordCollateralDelta(collateral, engineBalanceBefore);
+        _recordUserDeposit(msg.sender, address(collateral), amountCollateral);
         // if new deposit, add to array of addresses that can call mintDsc
         if (!usersWithCollateralDeposited.contains(msg.sender)) {
             usersWithCollateralDeposited.add(msg.sender);
+        }
+        if (!usersEverDeposited.contains(msg.sender)) {
+            usersEverDeposited.add(msg.sender);
         }
         // if new minter, add to array of addresses that can call burnDsc or redeemCollateralForDsc
         if (!usersWithDscMinted.contains(msg.sender)) {
@@ -232,9 +244,13 @@ contract Handler is Test {
         dscEngine.redeemCollateralForDsc(address(collateral), amountCollateral, amountDscToBurn);
         vm.stopPrank();
         _recordCollateralDelta(collateral, engineBalanceBefore);
+        _recordUserWithdrawal(sender, address(collateral), amountCollateral);
 
         if (!usersWithCollateralDeposited.contains(sender)) {
             usersWithCollateralDeposited.add(sender);
+        }
+        if (!usersEverDeposited.contains(sender)) {
+            usersEverDeposited.add(sender);
         }
         if (!usersWithDscMinted.contains(sender)) {
             usersWithDscMinted.add(sender);
@@ -362,6 +378,42 @@ contract Handler is Test {
         } else if (engineBalanceBefore > engineBalanceAfter) {
             totalDeposits[address(collateral)] -= (engineBalanceBefore - engineBalanceAfter);
         }
+    }
+
+    function _recordUserDeposit(address user, address collateral, uint256 amount) private {
+        userDeposits[user][collateral] += amount;
+    }
+
+    function _recordUserWithdrawal(address user, address collateral, uint256 amount) private {
+        userWithdrawals[user][collateral] += amount;
+    }
+
+    function getUsersWithCollateralDepositedCount() external view returns (uint256) {
+        return usersWithCollateralDeposited.length();
+    }
+
+    function getUsersWithCollateralDepositedAt(uint256 index) external view returns (address) {
+        return usersWithCollateralDeposited.at(index);
+    }
+
+    function getUsersWithDscMintedCount() external view returns (uint256) {
+        return usersWithDscMinted.length();
+    }
+
+    function getUsersWithDscMintedAt(uint256 index) external view returns (address) {
+        return usersWithDscMinted.at(index);
+    }
+
+    function getUsersEverDepositedCount() external view returns (uint256) {
+        return usersEverDeposited.length();
+    }
+
+    function getUsersEverDepositedAt(uint256 index) external view returns (address) {
+        return usersEverDeposited.at(index);
+    }
+
+    function getTokenUnit(address collateral) external view returns (uint256) {
+        return 10 ** uint256(ERC20DecimalsMock(collateral).decimals());
     }
 }
 

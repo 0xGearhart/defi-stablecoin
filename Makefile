@@ -1,6 +1,6 @@
 -include .env
 
-.PHONY: all clean remove install build test snapshot coverage-report gas-report anvil deploy
+.PHONY: all clean remove install build test snapshot coverage coverage-report gas-report anvil deploy
 
 DEFAULT_ANVIL_KEY := 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
@@ -20,6 +20,9 @@ build:; forge build
 
 # Run test suite
 test :; forge test 
+
+# Run forge coverage with minimal fuzz/invariant runs to save time
+coverage :; FOUNDRY_PROFILE=coverage forge coverage
 
 # Create test coverage report and save to .txt file
 # Use "coverage" foundry profile to prevent crashes due to excessive fuzz and invariant runs

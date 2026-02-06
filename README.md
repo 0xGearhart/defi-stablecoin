@@ -56,7 +56,7 @@
 
 1. **Deposit & Mint**: Approve collateral → Deposit wETH/wBTC → Mint DSC
 2. **Redeem & Burn**: Burn DSC → Withdraw collateral (health factor must stay ≥ 1.0)
-3. **Liquidation**: If health factor < 1.0, anyone can liquidate and earn 10% bonus
+3. **Liquidation**: If health factor < 1.0, anyone can liquidate and earn up to a 10% bonus
 
 **Health Factor Calculation:**
 ```
@@ -353,6 +353,8 @@ For production use, consider:
 ### Known Limitations
 
 - **Centralized Price Feeds**: System relies on Chainlink price feeds; oracle failure will impact system stability
+- **Price Feed Decimals Assumption**: Engine math assumes collateral/USD feeds have 8 decimals (production hardening: query/store feed decimals)
+- **WBTC Price Feed Reality**: On some networks WBTC/USD is unavailable, so BTC/USD is used (creates de-peg risk if WBTC diverges from BTC)
 - **Fixed Collateral Types**: Currently limited to wETH and wBTC; adding new collateral requires contract updates
 - **No Governance**: All protocol parameters are immutable; no governance mechanism for protocol upgrades
 - **Liquidation Incentives**: Max 10% liquidation bonus; effective bonus can be lower if collateral is insufficient. No market-based dynamic incentive adjustment.

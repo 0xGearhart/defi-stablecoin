@@ -376,13 +376,13 @@ For production use, consider:
 
 | Function                      | Gas Cost |
 | ----------------------------- | -------- |
-| `depositCollateral`           | ~63,764  |
-| `depositCollateralAndMintDsc` | ~164,508 |
-| `redeemCollateral`            | ~107,850 |
-| `redeemCollateralForDsc`      | ~142,603 |
-| `burnDsc`                     | ~101,956 |
-| `mintDsc`                     | ~105,403 |
-| `liquidate`                   | ~95,657  |
+| `depositCollateral`           | ~69,976  |
+| `depositCollateralAndMintDsc` | ~187,214 |
+| `redeemCollateral`            | ~109,958 |
+| `redeemCollateralForDsc`      | ~140,290 |
+| `burnDsc`                     | ~100,646 |
+| `mintDsc`                     | ~130,982 |
+| `liquidate`                   | ~98,986  |
 
 Generate gas report:
 

@@ -1,0 +1,482 @@
+No files changed, compilation skipped
+
+Ran 7 tests for test/integration/DeployDSCTest.t.sol:DeployDSCTest
+[PASS] testCorrectAccountWasUsed() (gas: 2491)
+[PASS] testDscEngineBtcUsdPriceFeedWasSetCorrectly() (gas: 22022)
+[PASS] testDscEngineEthUsdPriceFeedWasSetCorrectly() (gas: 22022)
+[PASS] testDscNameWasSetCorrectly() (gas: 11926)
+[PASS] testDscOwnerWasSetCorrectly() (gas: 9924)
+[PASS] testDscSymbolWasSetCorrectly() (gas: 11989)
+[PASS] testGetDecentralizedStableCoin() (gas: 7728)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 17.51ms (737.79µs CPU time)
+
+Ran 74 tests for test/unit/DSCEngineTest.t.sol:DSCEngineTest
+[PASS] testBurnDscEmitsEvents() (gas: 966630)
+[PASS] testBurnDscFailsIfAmountIsZero() (gas: 908768)
+[PASS] testBurnDscFailsWhenBurningMoreThanBalance() (gas: 911178)
+[PASS] testBurnDscUpdatesStateAndImprovesHealthFactor() (gas: 1223126)
+[PASS] testDepositCollateralAndMintDscEmitsEvents() (gas: 579861)
+[PASS] testDepositCollateralAndMintDscRevertsIfMintAmountIsZero() (gas: 481065)
+[PASS] testDepositCollateralAndMintDscUpdatesState() (gas: 650576)
+[PASS] testDepositCollateralEmitsEvent() (gas: 455217)
+[PASS] testDepositCollateralRevertsIfAmountIsZero() (gas: 412420)
+[PASS] testDepositCollateralRevertsIfTokenIsNotApproved() (gas: 710608)
+[PASS] testDepositCollateralUpdatesState() (gas: 620376)
+[PASS] testDscEngineConstructorRevertsOnDuplicateCollateralToken() (gas: 337320)
+[PASS] testDscEngineConstructorRevertsWhenAPriceFeedAddressIsZero() (gas: 341138)
+[PASS] testDscEngineConstructorRevertsWhenATokenAddressIsZero() (gas: 341044)
+[PASS] testDscEngineConstructorRevertsWhenArraysAreNotSameLength() (gas: 426341)
+[PASS] testDscEngineConstructorRevertsWhenTokenDecimalsAreInvalid() (gas: 1330255)
+[PASS] testDscEngineConstructorRevertsWhenTokenDoesNotImplementDecimals() (gas: 1338186)
+[PASS] testDscEngineConstructorStoresTokenDecimals() (gas: 19847)
+[PASS] testGetAccountInformationIsUpdatedAfterDepositingAndMintingDsc() (gas: 683027)
+[PASS] testGetAccountInformationIsUpdatedAfterDepositingCollateral() (gas: 535209)
+[PASS] testGetAdditionalPriceFeedPrecision() (gas: 5542)
+[PASS] testGetCollateralTokenAddressesReturnsAllTokens() (gas: 17874)
+[PASS] testGetDecentralizedStableCoinReturnsDscAddress() (gas: 7771)
+[PASS] testGetHealthFactorEstimate() (gas: 952351)
+[PASS] testGetHealthFactorReturnsCorrectValuesAfterDeposit() (gas: 606079)
+[PASS] testGetHealthFactorReturnsCorrectValuesAfterMint() (gas: 946894)
+[PASS] testGetHealthFactorReturnsCorrectValuesForFringeStates() (gas: 551939)
+[PASS] testGetHealthFactorShouldFailIfPriceIsStale() (gas: 880898)
+[PASS] testGetLiquidationBonus() (gas: 5589)
+[PASS] testGetLiquidationPrecision() (gas: 5478)
+[PASS] testGetLiquidationThreshold() (gas: 5533)
+[PASS] testGetMinHealthFactor() (gas: 5522)
+[PASS] testGetPrecision() (gas: 5544)
+[PASS] testGetPriceFeedAddressReturnsConfiguredFeed() (gas: 24259)
+[PASS] testGetTokenAmountFromUsd() (gas: 43296)
+[PASS] testGetTokenAmountFromUsdOnLocalChain() (gas: 28793)
+[PASS] testGetTokenAmountFromUsdOnLocalChainForWbtc() (gas: 34524)
+[PASS] testGetTokenAmountFromUsdShouldFailIfPriceIsInvalid() (gas: 106618)
+[PASS] testGetTokenAmountFromUsdShouldFailIfPriceIsStale() (gas: 45470)
+[PASS] testGetUsdValue() (gas: 43318)
+[PASS] testGetUsdValueOnLocalChain() (gas: 28850)
+[PASS] testGetUsdValueOnLocalChainForWbtc() (gas: 34619)
+[PASS] testGetUsdValueShouldFailIfPriceIsInvalid() (gas: 106661)
+[PASS] testGetUsdValueShouldFailIfPriceIsStale() (gas: 45556)
+[PASS] testLiquidateCapsBonusWhenCollateralIsTight() (gas: 1888985)
+[PASS] testLiquidateEmitsEventWithCappedBonus() (gas: 1886861)
+[PASS] testLiquidateEmitsEvents() (gas: 1487993)
+[PASS] testLiquidateFailsIfAmountIsZero() (gas: 1261523)
+[PASS] testLiquidateFailsIfLiquidatorHasBrokenHealthFactor() (gas: 1468768)
+[PASS] testLiquidateFailsIfUserIsNotEligibleForLiquidation() (gas: 1178822)
+[PASS] testLiquidateRevertsIfDebtToCoverExceedsCollateralDeposited() (gas: 1538007)
+[PASS] testLiquidateRevertsIfDebtToCoverExceedsDscMinted() (gas: 1392401)
+[PASS] testLiquidateRevertsIfHealthFactorNotImproved() (gas: 1488271)
+[PASS] testLiquidateUpdatesStateAndDistributesCorrectCollateralAmountPlusBonus() (gas: 1495051)
+[PASS] testLiquidateWithUint256MaxFailsIfUserToBeLiquidatedHasZeroDscMinted() (gas: 1179730)
+[PASS] testLiquidateWithUint256MaxLiquidatesTheMaximumAmount() (gas: 1864658)
+[PASS] testMintDscEmitsEvent() (gas: 704570)
+[PASS] testMintDscFailsIfAmountIsZero() (gas: 579825)
+[PASS] testMintDscFailsIfUserHasInsufficientCollateralDeposited() (gas: 717578)
+[PASS] testMintDscFailsIfUserHasNoCollateralDeposited() (gas: 436618)
+[PASS] testMintDscRevertsIfMintFails() (gas: 2724755)
+[PASS] testMintDscUpdatesStateAndMintsTokens() (gas: 724355)
+[PASS] testOracleLibRevertsIfAnswerIsZero() (gas: 502068)
+[PASS] testOracleLibRevertsIfIncompleteRound() (gas: 383578)
+[PASS] testOracleLibRevertsIfStartedAtIsZero() (gas: 506286)
+[PASS] testOracleLibRevertsIfUpdatedAtIsZero() (gas: 502174)
+[PASS] testRedeemCollateralEmitsEvents() (gas: 662598)
+[PASS] testRedeemCollateralFailsIfAmountIsZero() (gas: 580403)
+[PASS] testRedeemCollateralFailsIfBreaksHealthFactor() (gas: 952328)
+[PASS] testRedeemCollateralForDscEmitsEvents() (gas: 1004008)
+[PASS] testRedeemCollateralForDscRevertsIfBurnAmountIsZero() (gas: 909750)
+[PASS] testRedeemCollateralForDscRevertsIfCollateralAmountIsZero() (gas: 1018831)
+[PASS] testRedeemCollateralForDscUpdatesState() (gas: 1127172)
+[PASS] testRedeemCollateralUpdatesState() (gas: 675069)
+Suite result: ok. 74 passed; 0 failed; 0 skipped; finished in 37.86ms (21.84ms CPU time)
+
+Ran 9 tests for test/unit/DecentralizedStableCoinTest.t.sol:DecentralizedStableCoinTest
+[PASS] testBurnFailsWhenAmountIsGreaterThanBalance() (gas: 108593)
+[PASS] testBurnFailsWhenAmountIsZero() (gas: 36572)
+[PASS] testBurnFailsWhenCalledByAnyoneOtherThanOwner() (gas: 34802)
+[PASS] testBurnFromAlwaysFails() (gas: 105201)
+[PASS] testBurnSucceedsWhenCalledByOwner() (gas: 119295)
+[PASS] testMintFailsWhenAmountIsZero() (gas: 35094)
+[PASS] testMintFailsWhenCalledByAnyoneOtherThanOwner() (gas: 35474)
+[PASS] testMintFailsWhenToAddressIsZeroAddress() (gas: 34722)
+[PASS] testMintSucceedsWhenCalledByOwner() (gas: 86414)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 46.74ms (2.12ms CPU time)
+
+Ran 4 tests for test/fuzz/failOnRevert/InvariantsTest.t.sol:InvariantTest
+[PASS] invariant_dscEngineCollateralBalancesShouldEqualTotalDeposits() (runs: 10, calls: 100, reverts: 0)
+
+╭----------+----------------------------------+-------+---------+----------╮
+| Contract | Selector                         | Calls | Reverts | Discards |
++==========================================================================+
+| Handler  | attemptToLiquidateHealthyAccount | 17    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | burnDsc                          | 6     | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | depositCollateral                | 14    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | depositCollateralAndMintDsc      | 9     | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | liquidateIfEligibleWithPriceDrop | 10    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | mintDsc                          | 16    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | redeemCollateral                 | 16    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | redeemCollateralForDsc           | 12    | 0       | 0        |
+╰----------+----------------------------------+-------+---------+----------╯
+
+[PASS] invariant_gettersShouldNeverRevert() (runs: 10, calls: 100, reverts: 0)
+
+╭----------+----------------------------------+-------+---------+----------╮
+| Contract | Selector                         | Calls | Reverts | Discards |
++==========================================================================+
+| Handler  | attemptToLiquidateHealthyAccount | 10    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | burnDsc                          | 14    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | depositCollateral                | 15    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | depositCollateralAndMintDsc      | 17    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | liquidateIfEligibleWithPriceDrop | 9     | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | mintDsc                          | 11    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | redeemCollateral                 | 11    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | redeemCollateralForDsc           | 13    | 0       | 0        |
+╰----------+----------------------------------+-------+---------+----------╯
+
+[PASS] invariant_protocolMustHaveMoreCollateralValueThanTotalDscSupply() (runs: 10, calls: 100, reverts: 0)
+
+╭----------+----------------------------------+-------+---------+----------╮
+| Contract | Selector                         | Calls | Reverts | Discards |
++==========================================================================+
+| Handler  | attemptToLiquidateHealthyAccount | 14    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | burnDsc                          | 12    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | depositCollateral                | 14    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | depositCollateralAndMintDsc      | 9     | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | liquidateIfEligibleWithPriceDrop | 14    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | mintDsc                          | 13    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | redeemCollateral                 | 14    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | redeemCollateralForDsc           | 10    | 0       | 0        |
+╰----------+----------------------------------+-------+---------+----------╯
+
+[PASS] invariant_userShouldNeverWithdrawMoreThanWhatTheyDeposit() (runs: 10, calls: 100, reverts: 0)
+
+╭----------+----------------------------------+-------+---------+----------╮
+| Contract | Selector                         | Calls | Reverts | Discards |
++==========================================================================+
+| Handler  | attemptToLiquidateHealthyAccount | 12    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | burnDsc                          | 12    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | depositCollateral                | 11    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | depositCollateralAndMintDsc      | 12    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | liquidateIfEligibleWithPriceDrop | 10    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | mintDsc                          | 13    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | redeemCollateral                 | 14    | 0       | 0        |
+|----------+----------------------------------+-------+---------+----------|
+| Handler  | redeemCollateralForDsc           | 16    | 0       | 0        |
+╰----------+----------------------------------+-------+---------+----------╯
+
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 73.08ms (137.54ms CPU time)
+
+Ran 3 tests for test/integration/DeployDSCTest.t.sol:DeployDSCTest_ethSepolia
+[PASS] testCorrectAccountWasUsed() (gas: 5391)
+[PASS] testDscEngineBtcUsdPriceFeedWasSetCorrectly() (gas: 31892)
+[PASS] testDscEngineEthUsdPriceFeedWasSetCorrectly() (gas: 31980)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 1.04s (436.63µs CPU time)
+
+Ran 3 tests for test/integration/DeployDSCTest.t.sol:DeployDSCTest_ethMainnet
+[PASS] testCorrectAccountWasUsed() (gas: 5391)
+[PASS] testDscEngineBtcUsdPriceFeedWasSetCorrectly() (gas: 31892)
+[PASS] testDscEngineEthUsdPriceFeedWasSetCorrectly() (gas: 31980)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 1.67s (272.29µs CPU time)
+
+Ran 1 test for test/integration/DeployDSCTest.t.sol:DeployDSCTest_unsupportedChain
+[PASS] testDeploymentFailsForUnsupportedChain() (gas: 5934300)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 1.70s (1.69s CPU time)
+
+Ran 3 tests for test/integration/DeployDSCTest.t.sol:DeployDSCTest_arbMainnet
+[PASS] testCorrectAccountWasUsed() (gas: 5391)
+[PASS] testDscEngineBtcUsdPriceFeedWasSetCorrectly() (gas: 31892)
+[PASS] testDscEngineEthUsdPriceFeedWasSetCorrectly() (gas: 31980)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 2.08s (1.14ms CPU time)
+
+Ran 3 tests for test/integration/DeployDSCTest.t.sol:DeployDSCTest_arbSepolia
+[PASS] testCorrectAccountWasUsed() (gas: 5391)
+[PASS] testDscEngineBtcUsdPriceFeedWasSetCorrectly() (gas: 31892)
+[PASS] testDscEngineEthUsdPriceFeedWasSetCorrectly() (gas: 31980)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 2.80s (535.00µs CPU time)
+
+╭-------------------------------------------+-----------------+---------+---------+---------+---------╮
+| script/DeployDSC.s.sol:DeployDSC Contract |                 |         |         |         |         |
++=====================================================================================================+
+| Deployment Cost                           | Deployment Size |         |         |         |         |
+|-------------------------------------------+-----------------+---------+---------+---------+---------|
+| 5799700                                   | 26533           |         |         |         |         |
+|-------------------------------------------+-----------------+---------+---------+---------+---------|
+|                                           |                 |         |         |         |         |
+|-------------------------------------------+-----------------+---------+---------+---------+---------|
+| Function Name                             | Min             | Avg     | Median  | Max     | # Calls |
+|-------------------------------------------+-----------------+---------+---------+---------+---------|
+| run                                       | 79724           | 5237255 | 5511859 | 5511859 | 98      |
+╰-------------------------------------------+-----------------+---------+---------+---------+---------╯
+
+╭-------------------------------------------------+-----------------+------+--------+-------+---------╮
+| script/HelperConfig.s.sol:HelperConfig Contract |                 |      |        |       |         |
++=====================================================================================================+
+| Deployment Cost                                 | Deployment Size |      |        |       |         |
+|-------------------------------------------------+-----------------+------+--------+-------+---------|
+| 0                                               | 14247           |      |        |       |         |
+|-------------------------------------------------+-----------------+------+--------+-------+---------|
+|                                                 |                 |      |        |       |         |
+|-------------------------------------------------+-----------------+------+--------+-------+---------|
+| Function Name                                   | Min             | Avg  | Median | Max   | # Calls |
+|-------------------------------------------------+-----------------+------+--------+-------+---------|
+| activeNetworkConfig                             | 1003            | 6003 | 6003   | 11003 | 194     |
+╰-------------------------------------------------+-----------------+------+--------+-------+---------╯
+
+╭--------------------------------------+-----------------+--------+--------+--------+---------╮
+| src/DSCEngine.sol:DSCEngine Contract |                 |        |        |        |         |
++=============================================================================================+
+| Deployment Cost                      | Deployment Size |        |        |        |         |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| 1260374                              | 6476            |        |        |        |         |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+|                                      |                 |        |        |        |         |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                        | Min             | Avg    | Median | Max    | # Calls |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| burnDsc                              | 26718           | 100646 | 106240 | 106327 | 28      |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| depositCollateral                    | 27232           | 69976  | 63076  | 80176  | 145     |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| depositCollateralAndMintDsc          | 95826           | 187214 | 185934 | 203046 | 55      |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getAccountCollateralBalance          | 2833            | 2833   | 2833   | 2833   | 70      |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getAccountCollateralValueInUsd       | 51339           | 51339  | 51339  | 51339  | 5       |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getAccountInformation                | 53580           | 53580  | 53580  | 53580  | 164     |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getAdditionalPriceFeedPrecision      | 213             | 213    | 213    | 213    | 2       |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getCollateralTokenAddresses          | 7330            | 7330   | 7330   | 7330   | 8       |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getCollateralTokenDecimals           | 2617            | 2617   | 2617   | 2617   | 2       |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getDecentralizedStableCoin           | 236             | 236    | 236    | 236    | 2       |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getHealthFactor                      | 26944           | 53584  | 54068  | 54068  | 58      |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getHealthFactorEstimate              | 803             | 803    | 803    | 803    | 1       |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getLiquidationBonus                  | 325             | 325    | 325    | 325    | 2       |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getLiquidationPrecision              | 214             | 214    | 214    | 214    | 2       |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getLiquidationThreshold              | 270             | 270    | 270    | 270    | 2       |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getMinHealthFactor                   | 258             | 258    | 258    | 258    | 2       |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getPrecision                         | 280             | 280    | 280    | 280    | 2       |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getPriceFeedAddress                  | 2601            | 2601   | 2601   | 2601   | 40      |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getTokenAmountFromUsd                | 17681           | 21151  | 21270  | 21270  | 59      |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| getUsdValue                          | 17747           | 21285  | 21350  | 21350  | 109     |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| liquidate                            | 27595           | 98986  | 81281  | 218853 | 42      |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| mintDsc                              | 26763           | 130982 | 133064 | 150176 | 90      |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| redeemCollateral                     | 27210           | 109958 | 116377 | 119340 | 20      |
+|--------------------------------------+-----------------+--------+--------+--------+---------|
+| redeemCollateralForDsc               | 27402           | 140290 | 155044 | 155206 | 12      |
+╰--------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭------------------------------------------------------------------+-----------------+-------+--------+-------+---------╮
+| src/DecentralizedStableCoin.sol:DecentralizedStableCoin Contract |                 |       |        |       |         |
++=======================================================================================================================+
+| Deployment Cost                                                  | Deployment Size |       |        |       |         |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| 685894                                                           | 3555            |       |        |       |         |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                                                  |                 |       |        |       |         |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                                                    | Min             | Avg   | Median | Max   | # Calls |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| approve                                                          | 29229           | 43100 | 46341  | 46701 | 73      |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| balanceOf                                                        | 2560            | 2560  | 2560   | 2560  | 87      |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| burn                                                             | 23749           | 26143 | 25920  | 28986 | 4       |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| burnFrom                                                         | 429             | 429   | 429    | 429   | 1       |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| mint                                                             | 23973           | 50754 | 70725  | 70725 | 7       |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| name                                                             | 3109            | 3109  | 3109   | 3109  | 1       |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| owner                                                            | 2389            | 2389  | 2389   | 2389  | 1       |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| symbol                                                           | 3107            | 3107  | 3107   | 3107  | 1       |
+|------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| totalSupply                                                      | 2348            | 2348  | 2348   | 2348  | 1       |
+╰------------------------------------------------------------------+-----------------+-------+--------+-------+---------╯
+
+╭------------------------------------------------+-----------------+-------+--------+-------+---------╮
+| src/libraries/OracleLib.sol:OracleLib Contract |                 |       |        |       |         |
++=====================================================================================================+
+| Deployment Cost                                | Deployment Size |       |        |       |         |
+|------------------------------------------------+-----------------+-------+--------+-------+---------|
+| 138406                                         | 743             |       |        |       |         |
+|------------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                                |                 |       |        |       |         |
+|------------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                                  | Min             | Avg   | Median | Max   | # Calls |
+|------------------------------------------------+-----------------+-------+--------+-------+---------|
+| stalePriceFeedCheckLatestRoundData             | 1829            | 11973 | 12729  | 12729 | 1185    |
+╰------------------------------------------------+-----------------+-------+--------+-------+---------╯
+
+╭-------------------------------------------------------+-----------------+--------+--------+--------+---------╮
+| test/fuzz/failOnRevert/Handler.t.sol:Handler Contract |                 |        |        |        |         |
++==============================================================================================================+
+| Deployment Cost                                       | Deployment Size |        |        |        |         |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| 4429819                                               | 17584           |        |        |        |         |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+|                                                       |                 |        |        |        |         |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| Function Name                                         | Min             | Avg    | Median | Max    | # Calls |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| attemptToLiquidateHealthyAccount                      | 5115            | 106010 | 5116   | 241439 | 58      |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| burnDsc                                               | 2606            | 145841 | 2606   | 314609 | 51      |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| depositCollateral                                     | 245114          | 358375 | 340188 | 409596 | 60      |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| depositCollateralAndMintDsc                           | 293724          | 563671 | 557993 | 626787 | 52      |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| getTokenUnit                                          | 3926            | 3926   | 3926   | 3926   | 2       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| getUsersEverDepositedAt                               | 4776            | 4776   | 4776   | 4776   | 2       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| getUsersEverDepositedCount                            | 2490            | 2490   | 2490   | 2490   | 1       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| getUsersWithCollateralDepositedAt                     | 4820            | 4820   | 4820   | 4820   | 3       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| getUsersWithCollateralDepositedCount                  | 2512            | 2512   | 2512   | 2512   | 1       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| liquidateIfEligibleWithPriceDrop                      | 5090            | 105379 | 5091   | 347197 | 47      |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| mintDsc                                               | 2628            | 93440  | 2628   | 312114 | 59      |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| redeemCollateral                                      | 2652            | 153481 | 128280 | 374247 | 57      |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| redeemCollateralForDsc                                | 2586            | 63222  | 2586   | 421470 | 56      |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| timesAttemptToLiquidateHealthyAccountCalled           | 2352            | 2352   | 2352   | 2352   | 1       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| timesBurnCalled                                       | 2416            | 2416   | 2416   | 2416   | 1       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| timesDepositAndMintCalled                             | 2350            | 2350   | 2350   | 2350   | 1       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| timesDepositCalled                                    | 2438            | 2438   | 2438   | 2438   | 1       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| timesLiquidateCalled                                  | 2372            | 2372   | 2372   | 2372   | 1       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| timesMintCalled                                       | 2328            | 2328   | 2328   | 2328   | 1       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| timesRedeemAndBurnCalled                              | 2350            | 2350   | 2350   | 2350   | 1       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| timesRedeemCalled                                     | 2372            | 2372   | 2372   | 2372   | 1       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| totalDeposits                                         | 2593            | 2593   | 2593   | 2593   | 2       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| userDeposits                                          | 2746            | 2746   | 2746   | 2746   | 4       |
+|-------------------------------------------------------+-----------------+--------+--------+--------+---------|
+| userWithdrawals                                       | 2791            | 2791   | 2791   | 2791   | 4       |
+╰-------------------------------------------------------+-----------------+--------+--------+--------+---------╯
+
+╭-------------------------------------------------------------+-----------------+-------+--------+-------+---------╮
+| test/mocks/ERC20DecimalsMock.sol:ERC20DecimalsMock Contract |                 |       |        |       |         |
++==================================================================================================================+
+| Deployment Cost                                             | Deployment Size |       |        |       |         |
+|-------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| 520994                                                      | 2849            |       |        |       |         |
+|-------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                                             |                 |       |        |       |         |
+|-------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                                               | Min             | Avg   | Median | Max   | # Calls |
+|-------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| approve                                                     | 46306           | 46370 | 46366  | 46438 | 200     |
+|-------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| balanceOf                                                   | 2559            | 2559  | 2559   | 2559  | 282     |
+|-------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| decimals                                                    | 271             | 271   | 271    | 271   | 179     |
+|-------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| mint                                                        | 51255           | 51410 | 51315  | 68415 | 369     |
+╰-------------------------------------------------------------+-----------------+-------+--------+-------+---------╯
+
+╭-----------------------------------------------------------------+-----------------+-----+--------+-----+---------╮
+| test/mocks/ERC20NoDecimalsMock.sol:ERC20NoDecimalsMock Contract |                 |     |        |     |         |
++==================================================================================================================+
+| Deployment Cost                                                 | Deployment Size |     |        |     |         |
+|-----------------------------------------------------------------+-----------------+-----+--------+-----+---------|
+| 528951                                                          | 2890            |     |        |     |         |
+|-----------------------------------------------------------------+-----------------+-----+--------+-----+---------|
+|                                                                 |                 |     |        |     |         |
+|-----------------------------------------------------------------+-----------------+-----+--------+-----+---------|
+| Function Name                                                   | Min             | Avg | Median | Max | # Calls |
+|-----------------------------------------------------------------+-----------------+-----+--------+-----+---------|
+| decimals                                                        | 340             | 340 | 340    | 340 | 1       |
+╰-----------------------------------------------------------------+-----------------+-----+--------+-----+---------╯
+
+╭-----------------------------------------------------------+-----------------+-------+--------+--------+---------╮
+| test/mocks/MockV3Aggregator.sol:MockV3Aggregator Contract |                 |       |        |        |         |
++=================================================================================================================+
+| Deployment Cost                                           | Deployment Size |       |        |        |         |
+|-----------------------------------------------------------+-----------------+-------+--------+--------+---------|
+| 436199                                                    | 1355            |       |        |        |         |
+|-----------------------------------------------------------+-----------------+-------+--------+--------+---------|
+|                                                           |                 |       |        |        |         |
+|-----------------------------------------------------------+-----------------+-------+--------+--------+---------|
+| Function Name                                             | Min             | Avg   | Median | Max    | # Calls |
+|-----------------------------------------------------------+-----------------+-------+--------+--------+---------|
+| latestRoundData                                           | 969             | 8403  | 8969   | 8969   | 1189    |
+|-----------------------------------------------------------+-----------------+-------+--------+--------+---------|
+| updateAnswer                                              | 75869           | 99563 | 100617 | 100617 | 47      |
+|-----------------------------------------------------------+-----------------+-------+--------+--------+---------|
+| updateRoundData                                           | 32979           | 33215 | 33008  | 33659  | 3       |
+╰-----------------------------------------------------------+-----------------+-------+--------+--------+---------╯
+
+╭-------------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------╮
+| test/mocks/MockV3AggregatorWithAnsweredInRound.sol:MockV3AggregatorWithAnsweredInRound Contract |                 |       |        |       |         |
++======================================================================================================================================================+
+| Deployment Cost                                                                                 | Deployment Size |       |        |       |         |
+|-------------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| 306452                                                                                          | 837             |       |        |       |         |
+|-------------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+|                                                                                                 |                 |       |        |       |         |
+|-------------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| Function Name                                                                                   | Min             | Avg   | Median | Max   | # Calls |
+|-------------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| latestRoundData                                                                                 | 868             | 868   | 868    | 868   | 1       |
+|-------------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------|
+| updateRoundData                                                                                 | 36186           | 36186 | 36186  | 36186 | 1       |
+╰-------------------------------------------------------------------------------------------------+-----------------+-------+--------+-------+---------╯
+
+
+Ran 9 test suites in 2.81s (9.46s CPU time): 107 tests passed, 0 failed, 0 skipped (107 total tests)

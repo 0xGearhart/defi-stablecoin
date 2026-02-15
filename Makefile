@@ -32,7 +32,7 @@ coverage-report :; FOUNDRY_PROFILE=coverage forge coverage --report debug > cove
 snapshot :; forge snapshot
 
 # Generate table showing gas cost for each function
-gas-report :; forge test --gas-report > gas.txt
+gas-report :; FOUNDRY_PROFILE=coverage forge test --gas-report > gas.txt
 
 anvil :; anvil -m 'test test test test test test test test test test test junk' --steps-tracing --block-time 1
 

@@ -74,6 +74,15 @@ healthFactor = (collateralValueInUsd * LIQUIDATION_THRESHOLD / 100) * 1e18 / tot
 5. User's health factor must improve after liquidation
 6. Liquidator's own health factor must not break after receiving collateral
 
+### Liquidation Semantics
+
+- **Eligibility**: Only accounts with health factor `< 1.0` can be liquidated.
+- **Bonus behavior**: Liquidation bonus is **up to** 10%. If a full 10% bonus would exceed the user's remaining collateral for that token, bonus is capped down to available collateral.
+- **Sentinel support**: Passing `type(uint256).max` as `debtToCover` means "liquidate the maximum valid amount" for the selected collateral type while respecting protocol constraints.
+- **Debt and collateral bounds**: Liquidation reverts if `debtToCover` exceeds the user's minted DSC or if the requested debt implies redeeming more collateral than the user has deposited for that token.
+- **Post-condition**: Liquidation must improve the liquidated user's health factor; otherwise the transaction reverts.
+- **Liquidator safety**: After liquidation, liquidator health factor is checked and must remain healthy.
+
 ### Architecture
 
 ```

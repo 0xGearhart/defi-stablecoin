@@ -9,6 +9,8 @@
   - [About](#about)
     - [Key Features](#key-features)
     - [How It Works](#how-it-works)
+    - [Liquidation Semantics](#liquidation-semantics)
+    - [Oracle Policy](#oracle-policy)
     - [Architecture](#architecture)
   - [Getting Started](#getting-started)
     - [Requirements](#requirements)
@@ -82,6 +84,14 @@ healthFactor = (collateralValueInUsd * LIQUIDATION_THRESHOLD / 100) * 1e18 / tot
 - **Debt and collateral bounds**: Liquidation reverts if `debtToCover` exceeds the user's minted DSC or if the requested debt implies redeeming more collateral than the user has deposited for that token.
 - **Post-condition**: Liquidation must improve the liquidated user's health factor; otherwise the transaction reverts.
 - **Liquidator safety**: After liquidation, liquidator health factor is checked and must remain healthy.
+
+### Oracle Policy
+
+- **Fail-closed behavior**: Price reads revert on invalid or stale oracle data. If oracle checks fail, mint/redeem/liquidation flows that depend on price data are blocked.
+- **Round validation**: Oracle reads require a positive answer, non-zero timestamps, and `answeredInRound >= roundId`.
+- **Staleness enforcement**: Reads revert when feed data is older than the configured timeout window.
+- **Network-specific note**: On networks where WBTC/USD feed is unavailable, BTC/USD is used for WBTC pricing. This introduces WBTC/BTC depeg risk.
+- **Current assumption**: Engine math currently assumes 8-decimal collateral/USD feeds (production hardening would query/store feed decimals per feed).
 
 ### Architecture
 
